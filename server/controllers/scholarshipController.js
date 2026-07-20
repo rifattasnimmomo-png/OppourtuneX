@@ -27,7 +27,40 @@ const getScholarships=async(req,res)=>{
 
     try{
 
-        const scholarships=await Scholarship.find().sort({
+        const{
+            keyword,
+            university,
+            minAmount,
+            maxAmount,
+            deadlineBefore
+        }=req.query;
+
+        const filter={};
+
+        if(keyword){
+            filter.$or=[
+                {title:{$regex:keyword,$options:"i"}},
+                {university:{$regex:keyword,$options:"i"}},
+                {description:{$regex:keyword,$options:"i"}},
+                {eligibility:{$regex:keyword,$options:"i"}}
+            ];
+        }
+
+        if(university){
+            filter.university={$regex:university,$options:"i"};
+        }
+
+        if(minAmount||maxAmount){
+            filter.amount={};
+            if(minAmount) filter.amount.$gte=Number(minAmount);
+            if(maxAmount) filter.amount.$lte=Number(maxAmount);
+        }
+
+        if(deadlineBefore){
+            filter.deadline={$lte:new Date(deadlineBefore)};
+        }
+
+        const scholarships=await Scholarship.find(filter).sort({
             createdAt:-1
         });
 
