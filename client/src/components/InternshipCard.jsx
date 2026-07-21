@@ -260,7 +260,7 @@ function InternshipCard({ internship, refresh, myApplication }) {
                             myApplication && myApplication.status === "rejected" && (
 
                                 <p>
-                                    <span className="badge-neutral">Rejected</span>{" "}
+                                    <span className="badge-danger">Rejected</span>{" "}
                                     Applied on {new Date(myApplication.createdAt).toLocaleDateString()}
                                 </p>
 
@@ -321,6 +321,7 @@ function InternshipCard({ internship, refresh, myApplication }) {
                                                         <span className={
                                                             app.status === "accepted" ? "badge-success" :
                                                             app.status === "pending" ? "badge-pending" :
+                                                            app.status === "rejected" ? "badge-danger" :
                                                             "badge-neutral"
                                                         }>
                                                             {app.status}
