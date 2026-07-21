@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getInternships, createInternship } from "../services/internshipService";
+import { getMyApplications } from "../services/applicationService";
 import InternshipCard from "../components/InternshipCard";
 import InternshipForm from "../components/InternshipForm";
 import "../styles/filters.css";
@@ -11,6 +12,7 @@ function Internships() {
     const [internships, setInternships] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [sortBy, setSortBy] = useState("newest");
+    const [myApplications, setMyApplications] = useState([]);
 
     const [filters, setFilters] = useState({
         keyword: "",
@@ -23,7 +25,39 @@ function Internships() {
 
     useEffect(() => {
         loadInternships();
+
+        if (user.role === "student") {
+            loadMyApplications();
+        }
     }, []);
+
+    const loadMyApplications = async () => {
+
+        try {
+
+            const res = await getMyApplications(user.id);
+
+            setMyApplications(res.data);
+
+        }
+
+        catch (err) {
+
+            console.log(err);
+
+        }
+
+    };
+
+    const refreshAll = () => {
+
+        loadInternships(filters);
+
+        if (user.role === "student") {
+            loadMyApplications();
+        }
+
+    };
 
     const loadInternships = async (params = filters) => {
 
@@ -225,7 +259,8 @@ function Internships() {
                         <InternshipCard
                             key={internship._id}
                             internship={internship}
-                            refresh={loadInternships}
+                            refresh={refreshAll}
+                            myApplication={myApplications.find((a) => a.opportunity === internship._id)}
                         />
                     ))
                 )
