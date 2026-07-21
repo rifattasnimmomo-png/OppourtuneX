@@ -48,3 +48,57 @@
     margin-bottom:8px;
 
 }
+.applicant-row{
+
+    border-top:1px solid #eee;
+
+    padding:10px 0;
+
+}
+.badge-pending{
+
+    background:#fff3cd;
+
+    color:#856404;
+
+    padding:3px 10px;
+
+    border-radius:6px;
+
+    font-size:0.85em;
+
+    display:inline-block;
+
+}
+
+.badge-success{
+
+    background:#d4edda;
+
+    color:#155724;
+
+    padding:3px 10px;
+
+    border-radius:6px;
+
+    font-size:0.85em;
+
+    display:inline-block;
+
+}
+
+.badge-neutral{
+
+    background:#e2e3e5;
+
+    color:#383d41;
+
+    padding:3px 10px;
+
+    border-radius:6px;
+
+    font-size:0.85em;
+
+    display:inline-block;
+
+}

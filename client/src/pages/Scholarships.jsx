@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getScholarships, createScholarship } from "../services/scholarshipService";
+import { getMyApplications } from "../services/applicationService";
 import ScholarshipCard from "../components/ScholarshipCard";
 import ScholarshipForm from "../components/ScholarshipForm";
 import "../styles/filters.css";
@@ -11,6 +12,7 @@ function Scholarships() {
     const [scholarships, setScholarships] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [sortBy, setSortBy] = useState("newest");
+    const [myApplications, setMyApplications] = useState([]);
 
     const [filters, setFilters] = useState({
         keyword: "",
@@ -22,7 +24,39 @@ function Scholarships() {
 
     useEffect(() => {
         loadScholarships();
+
+        if (user.role === "student") {
+            loadMyApplications();
+        }
     }, []);
+
+    const loadMyApplications = async () => {
+
+        try {
+
+            const res = await getMyApplications(user.id);
+
+            setMyApplications(res.data);
+
+        }
+
+        catch (err) {
+
+            console.log(err);
+
+        }
+
+    };
+
+    const refreshAll = () => {
+
+        loadScholarships(filters);
+
+        if (user.role === "student") {
+            loadMyApplications();
+        }
+
+    };
 
     const loadScholarships = async (params = filters) => {
 
@@ -212,7 +246,8 @@ function Scholarships() {
                         <ScholarshipCard
                             key={scholarship._id}
                             scholarship={scholarship}
-                            refresh={loadScholarships}
+                            refresh={refreshAll}
+                            myApplication={myApplications.find((a) => a.opportunity === scholarship._id)}
                         />
                     ))
                 )
