@@ -1,0 +1,181 @@
+.stats-row{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+
+    gap:15px;
+
+    margin:20px 0;
+
+}
+
+.stat-box{
+
+    background:rgb(230, 218, 218);
+
+    padding:20px;
+
+    border-radius:10px;
+
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+
+    text-align:center;
+
+    cursor:pointer;
+
+}
+
+.stat-box.active{
+
+    outline:2px solid #6f7781;
+
+}
+
+.stat-number{
+
+    font-size:2em;
+
+    font-weight:bold;
+
+    margin:0;
+
+}
+
+.stat-label{
+
+    color:#5b5353;
+
+    margin:5px 0 0;
+
+}
+
+.stat-pending .stat-number{
+
+    color:#82650c;
+
+}
+
+.stat-accepted .stat-number{
+
+    color:#25823a;
+
+}
+
+.stat-rejected .stat-number{
+
+    color:#a2343f;
+
+}
+
+.filter-tabs{
+
+    display:flex;
+
+    gap:10px;
+
+    margin-bottom:20px;
+
+    flex-wrap:wrap;
+
+}
+
+.filter-tab{
+
+    padding:8px 16px;
+
+    border:1px solid #ccc;
+
+    background:white;
+
+    border-radius:20px;
+
+    cursor:pointer;
+
+}
+
+.filter-tab.active{
+
+    background:#263a56;
+
+    color:white;
+
+    border-color:#1f2937;
+
+}
+
+.application-row{
+
+    background:white;
+
+    padding:20px;
+
+    border-radius:10px;
+
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+
+    margin-bottom:15px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-start;
+
+    flex-wrap:wrap;
+
+    gap:15px;
+
+}
+
+.type-badge{
+
+    background:#4a79a7;
+
+    color:#fdfeff;
+
+    padding:2px 8px;
+
+    border-radius:6px;
+
+    font-size:0.75em;
+
+    display:inline-block;
+
+    margin-bottom:6px;
+
+}
+
+.application-status{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:flex-end;
+
+    gap:8px;
+
+}
+
+.empty-state{
+
+    background:white;
+
+    padding:40px;
+
+    border-radius:10px;
+
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+
+    text-align:center;
+
+}
+
+.empty-state a{
+
+    color:#1f2937;
+
+    font-weight:bold;
+
+}
