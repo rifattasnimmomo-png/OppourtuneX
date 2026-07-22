@@ -12,6 +12,7 @@ import UniversityDashboard from "./pages/UniversityDashboard";
 import Feed from "./pages/Feed";
 import Internships from "./pages/Internships";
 import Scholarships from "./pages/Scholarships";
+import Bookmarks from "./pages/Bookmarks";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -79,6 +80,15 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <Scholarships />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/bookmarks"
+                        element={
+                            <ProtectedRoute>
+                                <Bookmarks />
                             </ProtectedRoute>
                         }
                     />
