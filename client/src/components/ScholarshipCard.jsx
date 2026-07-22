@@ -3,16 +3,20 @@ import "../styles/cards.css";
 import ScholarshipForm from "./ScholarshipForm";
 import { updateScholarship, deleteScholarship } from "../services/scholarshipService";
 import { applyForOpportunity, getApplicationsForOpportunity, updateApplicationStatus, withdrawApplication } from "../services/applicationService";
+import { addBookmark, removeBookmark, updateBookmarkNote } from "../services/bookmarkService";
 
-function ScholarshipCard({ scholarship, refresh, myApplication }) {
+function ScholarshipCard({ scholarship, refresh, myApplication, myBookmark }) {
 
     const user = JSON.parse(localStorage.getItem("user"));
     const isOwner = scholarship.createdBy === user.id;
+    const isBookmarked = !!myBookmark;
 
     const [isEditing, setIsEditing] = useState(false);
     const [showApplicants, setShowApplicants] = useState(false);
     const [applicants, setApplicants] = useState([]);
     const [isApplying, setIsApplying] = useState(false);
+    const [isEditingNote, setIsEditingNote] = useState(false);
+    const [draftNote, setDraftNote] = useState("");
 
     const daysLeft = Math.ceil((new Date(scholarship.deadline) - new Date()) / (1000 * 60 * 60 * 24));
     const isClosingSoon = daysLeft >= 0 && daysLeft <= 7;
@@ -160,6 +164,69 @@ function ScholarshipCard({ scholarship, refresh, myApplication }) {
 
     };
 
+    const handleToggleBookmark = async () => {
+
+        try {
+
+            if (myBookmark) {
+
+                await removeBookmark(myBookmark._id);
+
+            }
+
+            else {
+
+                await addBookmark({
+                    user: user.id,
+                    opportunity: scholarship._id,
+                    opportunityType: "Scholarship"
+                });
+
+            }
+
+            refresh();
+
+        }
+
+        catch (err) {
+
+            console.log(err);
+
+        }
+
+    };
+
+    const handleSaveNote = async () => {
+
+        try {
+
+            await updateBookmarkNote(myBookmark._id, draftNote);
+
+            setIsEditingNote(false);
+
+            refresh();
+
+        }
+
+        catch (err) {
+
+            console.log(err);
+
+        }
+
+    };
+
+    const formatRelativeDays = (dateString) => {
+
+        const days = Math.floor((new Date() - new Date(dateString)) / (1000 * 60 * 60 * 24));
+
+        if (days === 0) return "today";
+        if (days === 1) return "1 day ago";
+
+        return `${days} days ago`;
+
+    };
+
     if (isEditing) {
 
         return (
@@ -190,6 +257,13 @@ function ScholarshipCard({ scholarship, refresh, myApplication }) {
                     <span className="badge-warning">⏰ Closing Soon</span>
                 )
             }
+
+            <button
+                className={isBookmarked ? "bookmark-btn active" : "bookmark-btn"}
+                onClick={handleToggleBookmark}
+            >
+                {isBookmarked ? "★ Bookmarked" : "☆ Bookmark"}
+            </button>
 
             <p><b>{scholarship.university}</b></p>
 
@@ -346,6 +420,58 @@ function ScholarshipCard({ scholarship, refresh, myApplication }) {
 
                                 </div>
 
+                            )
+                        }
+
+                    </div>
+
+                )
+            }
+
+            {
+                isBookmarked && (
+
+                    <div className="bookmark-note">
+
+                        <p className="bookmark-meta">
+                            Bookmarked {formatRelativeDays(myBookmark.createdAt)}
+                        </p>
+
+                        {
+                            isEditingNote ?
+                            (
+                                <div>
+
+                                    <textarea
+                                        rows="2"
+                                        value={draftNote}
+                                        onChange={(e) => setDraftNote(e.target.value)}
+                                        placeholder="Add a note..."
+                                    />
+
+                                    <button onClick={handleSaveNote}>
+                                        Save Note
+                                    </button>
+
+                                    <button onClick={() => setIsEditingNote(false)}>
+                                        Cancel
+                                    </button>
+
+                                </div>
+                            )
+                            :
+                            (
+                                <p>
+                                    {myBookmark.note ? `Note: ${myBookmark.note}` : "No note added"}{" "}
+                                    <button
+                                        onClick={() => {
+                                            setDraftNote(myBookmark.note || "");
+                                            setIsEditingNote(true);
+                                        }}
+                                    >
+                                        {myBookmark.note ? "Edit Note" : "Add Note"}
+                                    </button>
+                                </p>
                             )
                         }
 

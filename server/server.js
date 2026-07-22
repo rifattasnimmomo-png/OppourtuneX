@@ -2,6 +2,7 @@ const postRoutes=require("./routes/postRoutes");
 const internshipRoutes=require("./routes/internshipRoutes");
 const scholarshipRoutes=require("./routes/scholarshipRoutes");
 const applicationRoutes=require("./routes/applicationRoutes");
+const bookmarkRoutes=require("./routes/bookmarkRoutes");
 const express=require("express");
 const dotenv=require("dotenv");
 const cors=require("cors");
@@ -20,6 +21,7 @@ app.use("/api/internships",internshipRoutes);
 app.use("/api/posts",postRoutes);
 app.use("/api/scholarships",scholarshipRoutes);
 app.use("/api/applications",applicationRoutes);
+app.use("/api/bookmarks",bookmarkRoutes);
 
 app.get("/",(req,res)=>{
     res.send("Backend is running");

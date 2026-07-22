@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getScholarships, createScholarship } from "../services/scholarshipService";
 import { getMyApplications } from "../services/applicationService";
+import { getMyBookmarks } from "../services/bookmarkService";
 import ScholarshipCard from "../components/ScholarshipCard";
 import ScholarshipForm from "../components/ScholarshipForm";
 import "../styles/filters.css";
@@ -13,6 +14,7 @@ function Scholarships() {
     const [showForm, setShowForm] = useState(false);
     const [sortBy, setSortBy] = useState("newest");
     const [myApplications, setMyApplications] = useState([]);
+    const [myBookmarks, setMyBookmarks] = useState([]);
 
     const [filters, setFilters] = useState({
         keyword: "",
@@ -24,11 +26,30 @@ function Scholarships() {
 
     useEffect(() => {
         loadScholarships();
+        loadMyBookmarks();
 
         if (user.role === "student") {
             loadMyApplications();
         }
     }, []);
+
+    const loadMyBookmarks = async () => {
+
+        try {
+
+            const res = await getMyBookmarks(user.id);
+
+            setMyBookmarks(res.data);
+
+        }
+
+        catch (err) {
+
+            console.log(err);
+
+        }
+
+    };
 
     const loadMyApplications = async () => {
 
@@ -51,6 +72,7 @@ function Scholarships() {
     const refreshAll = () => {
 
         loadScholarships(filters);
+        loadMyBookmarks();
 
         if (user.role === "student") {
             loadMyApplications();
@@ -248,6 +270,7 @@ function Scholarships() {
                             scholarship={scholarship}
                             refresh={refreshAll}
                             myApplication={myApplications.find((a) => a.opportunity === scholarship._id)}
+                            myBookmark={myBookmarks.find((b) => b.opportunity === scholarship._id)}
                         />
                     ))
                 )

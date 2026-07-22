@@ -10,6 +10,8 @@
 
     box-shadow:0 2px 8px rgba(0,0,0,.1);
 
+    position: relative;
+
 }
 
 .post-card textarea{
@@ -115,5 +117,56 @@
     font-size:0.85em;
 
     display:inline-block;
+
+}
+.bookmark-btn{
+
+    position:absolute;
+
+    top:15px;
+
+    right:15px;
+
+    background:rgb(251, 248, 248);
+
+    border:1px solid #ccc;
+
+    padding:5px 12px;
+
+    border-radius:20px;
+
+    font-size:0.85em;
+
+    cursor:pointer;
+
+}
+
+.bookmark-btn.active{
+
+    background:#fff3cd;
+
+    border-color:#856404;
+
+    color:#856404;
+
+}
+
+.bookmark-note{
+
+    border-top:1px solid #a19cb5;
+
+    padding-top:10px;
+
+    margin-top:10px;
+
+}
+
+.bookmark-meta{
+
+    color:#999;
+
+    font-size:0.85em;
+
+    margin:0 0 6px;
 
 }
