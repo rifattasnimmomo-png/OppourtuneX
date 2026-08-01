@@ -184,6 +184,69 @@ const updateProfile=async(req,res)=>{
 
 };
 
+<<<<<<< HEAD
+=======
+const searchUsers=async(req,res)=>{
+
+    try{
+
+        const query=(req.query.query||"").trim();
+
+        const currentUserId=req.query.currentUserId;
+
+        const filter={};
+
+        if(currentUserId){
+            filter._id={$ne:currentUserId};
+        }
+
+        if(query){
+            const regex=new RegExp(query,"i");
+            filter.$or=[
+                {name:regex},
+                {email:regex},
+                {department:regex},
+                {companyName:regex},
+                {universityName:regex},
+                {role:regex}
+            ];
+        }
+
+        const users=await User.find(filter)
+            .select("-password -__v")
+            .sort({name:1})
+            .limit(30);
+
+        res.status(200).json(users.map((user)=>({
+            id:user._id,
+            name:user.name,
+            email:user.email,
+            role:user.role,
+            companyName:user.companyName,
+            universityName:user.universityName,
+            department:user.department,
+            bio:user.bio,
+            displayName:user.companyName||user.universityName||user.name,
+            subtitle:user.role==="company"
+                ? user.companyName
+                : user.role==="university"
+                    ? user.universityName
+                    : user.department||user.email
+        })));
+
+    }
+
+    catch(error){
+
+        res.status(500).json({
+            message:error.message
+        });
+
+    }
+
+};
+
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
 const followUser=async(req,res)=>{
 
     try{
@@ -295,6 +358,10 @@ module.exports={
     loginUser,
     getProfile,
     updateProfile,
+<<<<<<< HEAD
+=======
+    searchUsers,
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
     followUser,
     unfollowUser
 };

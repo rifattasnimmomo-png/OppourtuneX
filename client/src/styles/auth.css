@@ -21,6 +21,11 @@ body{
 
 .auth-form h2{
     text-align:center;
+<<<<<<< HEAD
+=======
+    color:#111827;
+    font-weight:700;
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
 }
 
 .auth-form input{

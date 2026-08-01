@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getMyBookmarks } from "../services/bookmarkService";
+<<<<<<< HEAD
+=======
+import { getUnreadMessageCount } from "../services/messageService";
+import { getUnreadNotificationCount } from "../services/notificationService";
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
 import "../styles/sidebar.css";
 
 function Sidebar() {
 
+<<<<<<< HEAD
     const user = JSON.parse(localStorage.getItem("user"));
     const location = useLocation();
 
@@ -13,10 +19,41 @@ function Sidebar() {
     useEffect(() => {
 
         loadBookmarkCount();
+=======
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const location = useLocation();
+
+    const [bookmarkCount, setBookmarkCount] = useState(0);
+    const [messageCount, setMessageCount] = useState(0);
+    const [notificationCount, setNotificationCount] = useState(0);
+
+    useEffect(() => {
+        loadBookmarkCount();
+        loadMessageCount();
+        loadNotificationCount();
+
+        const handleCounterRefresh = () => {
+            loadMessageCount();
+            loadNotificationCount();
+        };
+
+        window.addEventListener("dashboard-counters-updated", handleCounterRefresh);
+
+        const intervalId = window.setInterval(() => {
+            loadMessageCount();
+            loadNotificationCount();
+        }, 5000);
+
+        return () => {
+            window.removeEventListener("dashboard-counters-updated", handleCounterRefresh);
+            window.clearInterval(intervalId);
+        };
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
 
     }, [location.pathname]);
 
     const loadBookmarkCount = async () => {
+<<<<<<< HEAD
 
         try {
 
@@ -32,6 +69,41 @@ function Sidebar() {
 
         }
 
+=======
+        if (!user?.id) return;
+
+        try {
+            const res = await getMyBookmarks(user.id);
+            setBookmarkCount(res.data.length);
+        }
+        catch (err) {
+            console.log(err);
+        }
+    };
+
+    const loadMessageCount = async () => {
+        if (!user?.id) return;
+
+        try {
+            const res = await getUnreadMessageCount(user.id);
+            setMessageCount(res.data.count || 0);
+        }
+        catch (err) {
+            console.log(err);
+        }
+    };
+
+    const loadNotificationCount = async () => {
+        if (!user?.id) return;
+
+        try {
+            const res = await getUnreadNotificationCount(user.id);
+            setNotificationCount(res.data.count || 0);
+        }
+        catch (err) {
+            console.log(err);
+        }
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
     };
 
     return (
@@ -55,7 +127,34 @@ function Sidebar() {
             </Link>
 
             <Link to="/bookmarks">
+<<<<<<< HEAD
                 Bookmarks{bookmarkCount > 0 ? ` (${bookmarkCount})` : ""}
+=======
+                <span className="sidebar-link-label">Bookmarks</span>
+                {bookmarkCount > 0 ? <span className="sidebar-count">({bookmarkCount})</span> : null}
+            </Link>
+
+            <Link to="/messages">
+                <span className="sidebar-link-label">Messages</span>
+                {messageCount > 0 ? <span className="sidebar-count">({messageCount})</span> : null}
+            </Link>
+
+            <Link to="/calendar">
+                Calendar
+            </Link>
+
+            <Link to="/matching-score">
+                Matching Score
+            </Link>
+
+            <Link to="/resume-builder">
+                Resume Builder
+            </Link>
+
+            <Link to="/notifications">
+                <span className="sidebar-link-label">Notifications</span>
+                {notificationCount > 0 ? <span className="sidebar-count">({notificationCount})</span> : null}
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
             </Link>
 
             <Link to="/profile">

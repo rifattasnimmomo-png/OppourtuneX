@@ -34,7 +34,11 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --text: #9ca3af;
+<<<<<<< HEAD
     --text-h: #f3f4f6;
+=======
+    --text-h: #111827;
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
     --bg: #16171d;
     --border: #2e303a;
     --code-bg: #1f2028;
@@ -68,9 +72,19 @@ body {
 }
 
 h1,
+<<<<<<< HEAD
 h2 {
   font-family: var(--heading);
   font-weight: 500;
+=======
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--heading);
+  font-weight: 600;
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
   color: var(--text-h);
 }
 

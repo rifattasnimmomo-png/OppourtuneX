@@ -12,8 +12,30 @@
     text-decoration:none;
     color:#333;
     font-weight:500;
+<<<<<<< HEAD
+=======
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    flex-wrap:nowrap;
+    white-space:nowrap;
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
 }
 
 .sidebar a:hover{
     color:#2563eb;
+<<<<<<< HEAD
+=======
+}
+
+.sidebar-link-label,
+.sidebar-count{
+    display:inline-block;
+}
+
+.sidebar-count{
+    color:#4338ca;
+    font-weight:700;
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
 }

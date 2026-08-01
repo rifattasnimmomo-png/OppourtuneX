@@ -3,6 +3,11 @@ const internshipRoutes=require("./routes/internshipRoutes");
 const scholarshipRoutes=require("./routes/scholarshipRoutes");
 const applicationRoutes=require("./routes/applicationRoutes");
 const bookmarkRoutes=require("./routes/bookmarkRoutes");
+<<<<<<< HEAD
+=======
+const messageRoutes=require("./routes/messageRoutes");
+const notificationRoutes=require("./routes/notificationRoutes");
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
 const express=require("express");
 const dotenv=require("dotenv");
 const cors=require("cors");
@@ -14,7 +19,16 @@ connectDB();
 const userRoutes=require("./routes/userRoutes");
 
 const app=express();
+<<<<<<< HEAD
 app.use(cors());
+=======
+app.use(cors({
+    origin: true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
 app.use(express.json());
 app.use("/api/users",userRoutes);
 app.use("/api/internships",internshipRoutes);
@@ -22,6 +36,11 @@ app.use("/api/posts",postRoutes);
 app.use("/api/scholarships",scholarshipRoutes);
 app.use("/api/applications",applicationRoutes);
 app.use("/api/bookmarks",bookmarkRoutes);
+<<<<<<< HEAD
+=======
+app.use("/api/messages",messageRoutes);
+app.use("/api/notifications",notificationRoutes);
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
 
 app.get("/",(req,res)=>{
     res.send("Backend is running");

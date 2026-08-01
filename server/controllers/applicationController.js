@@ -1,4 +1,18 @@
 const Application=require("../models/Application");
+<<<<<<< HEAD
+=======
+const Notification=require("../models/Notification");
+const Internship=require("../models/Internship");
+const Scholarship=require("../models/Scholarship");
+
+const getOpportunityDetails=async(opportunityId,opportunityType)=>{
+    if(opportunityType==="Internship"){
+        return Internship.findById(opportunityId).select("title company");
+    }
+
+    return Scholarship.findById(opportunityId).select("title university");
+};
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
 
 const applyForOpportunity=async(req,res)=>{
 
@@ -26,6 +40,20 @@ const applyForOpportunity=async(req,res)=>{
             opportunityType
         });
 
+<<<<<<< HEAD
+=======
+        const opportunityDetails=await getOpportunityDetails(opportunity,opportunityType);
+        const opportunityName=opportunityDetails?.title||`${opportunityType}`;
+
+        await Notification.create({
+            user:student,
+            type:"application",
+            title:`Your application for ${opportunityName} is pending`,
+            message:`Your application for ${opportunityName} is pending.`,
+            relatedApplication:application._id
+        });
+
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
         res.status(201).json({
             message:"Application submitted successfully",
             application
@@ -105,10 +133,33 @@ const updateApplicationStatus=async(req,res)=>{
 
         }
 
+<<<<<<< HEAD
         application.status=req.body.status||application.status;
 
         await application.save();
 
+=======
+        const nextStatus=req.body.status||application.status;
+        const previousStatus=application.status;
+        application.status=nextStatus;
+
+        await application.save();
+
+        if(nextStatus!==previousStatus && (nextStatus==="accepted" || nextStatus==="rejected")){
+            const readableStatus=nextStatus.charAt(0).toUpperCase()+nextStatus.slice(1);
+            const opportunityDetails=await getOpportunityDetails(application.opportunity,application.opportunityType);
+            const opportunityName=opportunityDetails?.title||`${application.opportunityType}`;
+
+            await Notification.create({
+                user:application.student,
+                type:"application",
+                title:`Your application for ${opportunityName} is ${readableStatus.toLowerCase()}`,
+                message:`Your application for ${opportunityName} has been ${nextStatus}.`,
+                relatedApplication:application._id
+            });
+        }
+
+>>>>>>> 66821a5 (Add updated opportunity calendar feature)
         res.json({
             message:"Application status updated successfully",
             application
