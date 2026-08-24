@@ -14,8 +14,6 @@ export const getProfile = (id) => {
 
 export const updateProfile = (id, data) => {
     return api.put(`/users/${id}`, data);
-<<<<<<< HEAD
-=======
 };
 
 export const searchUsers = (query, currentUserId) => {
@@ -25,5 +23,4 @@ export const searchUsers = (query, currentUserId) => {
             currentUserId
         }
     });
->>>>>>> 66821a5 (Add updated opportunity calendar feature)
 };
