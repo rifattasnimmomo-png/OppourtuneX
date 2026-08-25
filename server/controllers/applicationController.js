@@ -161,6 +161,23 @@ const withdrawApplication = async (req, res) => {
 
         await application.save();
 
+        const opportunityDetails = await getOpportunityDetails(
+            application.opportunity,
+            application.opportunityType
+        );
+
+        const opportunityName =
+            opportunityDetails?.title ||
+            `${application.opportunityType}`;
+
+        await Notification.create({
+            user: application.student,
+            type: "application",
+            title: `You withdrew your application for ${opportunityName}`,
+            message: `You withdrew your application for ${opportunityName}.`,
+            relatedApplication: application._id
+        });
+
         res.json({
             message: "Application withdrawn successfully",
             application
