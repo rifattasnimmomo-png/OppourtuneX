@@ -1,30 +1,25 @@
-const express=require("express");
+const express = require("express");
 
-const router=express.Router();
+const router = express.Router();
 
-const{
+const {
     registerUser,
     loginUser,
     getProfile,
     updateProfile,
-<<<<<<< HEAD
-=======
     searchUsers,
->>>>>>> 66821a5 (Add updated opportunity calendar feature)
     followUser,
     unfollowUser
-}=require("../controllers/userController");
+} = require("../controllers/userController");
 
-router.post("/register",registerUser);
-router.post("/login",loginUser);
-<<<<<<< HEAD
-=======
-router.get("/search",searchUsers);
->>>>>>> 66821a5 (Add updated opportunity calendar feature)
-router.get("/:id",getProfile);
-router.put("/:id",updateProfile);
-router.put("/:id/follow",followUser);
+router.post("/register", registerUser);
+router.post("/login", loginUser);
 
-router.put("/:id/unfollow",unfollowUser);
+router.get("/search", searchUsers);
 
-module.exports=router;
+router.get("/:id", getProfile);
+router.put("/:id", updateProfile);
+router.put("/:id/follow", followUser);
+router.put("/:id/unfollow", unfollowUser);
+
+module.exports = router;

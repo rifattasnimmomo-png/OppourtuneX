@@ -7,8 +7,6 @@
     flex:1;
     padding:30px;
     background:#f5f7fa;
-<<<<<<< HEAD
-=======
 }
 
 .dashboard-content h1,
@@ -19,5 +17,4 @@
 .dashboard-content h6{
     color:#111827;
     font-weight:700;
->>>>>>> 66821a5 (Add updated opportunity calendar feature)
 }
