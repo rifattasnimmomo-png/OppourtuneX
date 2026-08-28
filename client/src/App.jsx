@@ -23,17 +23,53 @@ import OpportunityCalendar from "./pages/OpportunityCalendar";
 import MatchingScore from "./pages/MatchingScore";
 import ResumeBuilder from "./pages/ResumeBuilder";
 
+import Achievements from "./pages/Achievements";
+import ActivityLog from "./pages/ActivityLog";
+
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
+import CreateAssessment from "./pages/CreateAssessment";
+import Assessments from "./pages/Assessments";
+import TakeAssessment from "./pages/TakeAssessment";
+import AssessmentResult from "./pages/AssessmentResult";
+import AssessmentSubmissions from "./pages/AssessmentSubmissions";
+
+import ApplicationHistory from "./pages/ApplicationHistory";
+
+import OpportunityComparison from "./pages/OpportunityComparison";
+
+import Help from "./pages/Help";
+
+
 function App() {
+
     return (
         <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
 
-            <Route element={<DashboardLayout />}>
+            {/* Public Routes */}
+
+            <Route
+                path="/"
+                element={<Login />}
+            />
+
+            <Route
+                path="/login"
+                element={<Login />}
+            />
+
+            <Route
+                path="/register"
+                element={<Register />}
+            />
+
+
+            {/* Protected Routes */}
+
+            <Route
+                element={<DashboardLayout />}
+            >
 
                 <Route
                     path="/student-dashboard"
@@ -61,6 +97,7 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+
 
                 <Route
                     path="/feed"
@@ -98,6 +135,7 @@ function App() {
                     }
                 />
 
+
                 <Route
                     path="/messages"
                     element={
@@ -134,6 +172,33 @@ function App() {
                     }
                 />
 
+
+                {/* Achievements */}
+
+                <Route
+                    path="/achievements"
+                    element={
+                        <ProtectedRoute>
+                            <Achievements />
+                        </ProtectedRoute>
+                    }
+                />
+
+
+                {/* Activity Log */}
+
+                <Route
+                    path="/activity-log"
+                    element={
+                        <ProtectedRoute>
+                            <ActivityLog />
+                        </ProtectedRoute>
+                    }
+                />
+
+
+                {/* Notifications */}
+
                 <Route
                     path="/notifications"
                     element={
@@ -152,9 +217,100 @@ function App() {
                     }
                 />
 
+
+                {/* Application History */}
+
+                <Route
+                    path="/application-history"
+                    element={
+                        <ProtectedRoute>
+                            <ApplicationHistory />
+                        </ProtectedRoute>
+                    }
+                />
+
+
+                {/* Opportunity Comparison */}
+
+                <Route
+                    path="/compare"
+                    element={
+                        <ProtectedRoute>
+                            <OpportunityComparison />
+                        </ProtectedRoute>
+                    }
+                />
+
+
+                {/* Help / FAQ */}
+
+                <Route
+                    path="/help"
+                    element={
+                        <ProtectedRoute>
+                            <Help />
+                        </ProtectedRoute>
+                    }
+                />
+
+
+                {/* Assessment Routes */}
+
+                <Route
+                    path="/assessments"
+                    element={
+                        <ProtectedRoute>
+                            <Assessments />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/assessments/create"
+                    element={
+                        <ProtectedRoute>
+                            <CreateAssessment />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/assessments/:id"
+                    element={
+                        <ProtectedRoute>
+                            <TakeAssessment />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/assessments/:id/result/:studentId"
+                    element={
+                        <ProtectedRoute>
+                            <AssessmentResult />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/assessments/:id/submissions"
+                    element={
+                        <ProtectedRoute>
+                            <AssessmentSubmissions />
+                        </ProtectedRoute>
+                    }
+                />
+
             </Route>
 
-            <Route path="*" element={<NotFound />} />
+
+            {/* 404 */}
+
+            <Route
+                path="*"
+                element={<NotFound />}
+            />
+
         </Routes>
     );
 }

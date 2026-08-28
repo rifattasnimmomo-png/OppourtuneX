@@ -1,19 +1,26 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getMyApplications, withdrawApplication } from "../services/applicationService";
+import {
+    getMyApplications,
+    withdrawApplication
+} from "../services/applicationService";
+import { getInterviewsForStudent } from "../services/interviewService";
 import { getInternships } from "../services/internshipService";
 import { getScholarships } from "../services/scholarshipService";
+
 import "../styles/cards.css";
 import "../styles/filters.css";
 import "../styles/dashboard-applications.css";
 
 function StudentDashboard() {
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     const [applications, setApplications] = useState([]);
     const [internships, setInternships] = useState([]);
     const [scholarships, setScholarships] = useState([]);
+    const [interviews, setInterviews] = useState([]);
+
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState("all");
     const [sortBy, setSortBy] = useState("recent");
@@ -22,6 +29,8 @@ function StudentDashboard() {
 
         if (user.role === "student") {
             loadDashboard();
+        } else {
+            setLoading(false);
         }
 
     }, []);
@@ -32,19 +41,24 @@ function StudentDashboard() {
 
         try {
 
-            const [applicationsRes, internshipsRes, scholarshipsRes] = await Promise.all([
+            const [
+                applicationsRes,
+                internshipsRes,
+                scholarshipsRes,
+                interviewsRes
+            ] = await Promise.all([
                 getMyApplications(user.id),
                 getInternships(),
-                getScholarships()
+                getScholarships(),
+                getInterviewsForStudent(user.id)
             ]);
 
-            setApplications(applicationsRes.data);
-            setInternships(internshipsRes.data);
-            setScholarships(scholarshipsRes.data);
+            setApplications(applicationsRes.data || []);
+            setInternships(internshipsRes.data || []);
+            setScholarships(scholarshipsRes.data || []);
+            setInterviews(interviewsRes.data || []);
 
-        }
-
-        catch (err) {
+        } catch (err) {
 
             console.log(err);
 
@@ -64,9 +78,7 @@ function StudentDashboard() {
 
             loadDashboard();
 
-        }
-
-        catch (err) {
+        } catch (err) {
 
             console.log(err);
 
@@ -82,7 +94,9 @@ function StudentDashboard() {
 
                 <h1>Student Dashboard</h1>
 
-                <p>This dashboard is only available for student accounts.</p>
+                <p>
+                    This dashboard is only available for student accounts.
+                </p>
 
             </div>
 
@@ -92,9 +106,14 @@ function StudentDashboard() {
 
     const enrichedApplications = applications.map((app) => {
 
-        const source = app.opportunityType === "Internship" ? internships : scholarships;
+        const source =
+            app.opportunityType === "Internship"
+                ? internships
+                : scholarships;
 
-        const opportunity = source.find((o) => o._id === app.opportunity);
+        const opportunity = source.find(
+            (o) => o._id === app.opportunity
+        );
 
         return {
             ...app,
@@ -105,15 +124,30 @@ function StudentDashboard() {
 
     const stats = {
         total: enrichedApplications.length,
-        pending: enrichedApplications.filter((a) => a.status === "pending").length,
-        accepted: enrichedApplications.filter((a) => a.status === "accepted").length,
-        rejected: enrichedApplications.filter((a) => a.status === "rejected").length,
-        withdrawn: enrichedApplications.filter((a) => a.status === "withdrawn").length
+
+        pending: enrichedApplications.filter(
+            (a) => a.status === "pending"
+        ).length,
+
+        accepted: enrichedApplications.filter(
+            (a) => a.status === "accepted"
+        ).length,
+
+        rejected: enrichedApplications.filter(
+            (a) => a.status === "rejected"
+        ).length,
+
+        withdrawn: enrichedApplications.filter(
+            (a) => a.status === "withdrawn"
+        ).length
     };
 
-    const filteredApplications = activeFilter === "all"
-        ? enrichedApplications
-        : enrichedApplications.filter((a) => a.status === activeFilter);
+    const filteredApplications =
+        activeFilter === "all"
+            ? enrichedApplications
+            : enrichedApplications.filter(
+                (a) => a.status === activeFilter
+            );
 
     const sortedApplications = [...filteredApplications].sort((a, b) => {
 
@@ -122,13 +156,31 @@ function StudentDashboard() {
             if (!a.opportunity) return 1;
             if (!b.opportunity) return -1;
 
-            return new Date(a.opportunity.deadline) - new Date(b.opportunity.deadline);
+            return (
+                new Date(a.opportunity.deadline) -
+                new Date(b.opportunity.deadline)
+            );
 
         }
 
-        return new Date(b.createdAt) - new Date(a.createdAt);
+        return (
+            new Date(b.createdAt) -
+            new Date(a.createdAt)
+        );
 
     });
+
+    const upcomingInterviews = interviews
+        .filter(
+            (interview) =>
+                interview.status === "scheduled" &&
+                new Date(interview.scheduledAt) >= new Date()
+        )
+        .sort(
+            (a, b) =>
+                new Date(a.scheduledAt) -
+                new Date(b.scheduledAt)
+        );
 
     return (
 
@@ -136,57 +188,224 @@ function StudentDashboard() {
 
             <h1>Student Dashboard</h1>
 
+            <h2>Upcoming Interviews</h2>
+
+            {loading ? (
+
+                <p>Loading your interviews...</p>
+
+            ) : upcomingInterviews.length === 0 ? (
+
+                <div className="empty-state">
+
+                    <p>No interviews scheduled.</p>
+
+                </div>
+
+            ) : (
+
+                <div>
+
+                    {upcomingInterviews.map((interview) => (
+
+                        <div
+                            key={interview._id}
+                            className="application-row"
+                        >
+
+                            <div>
+
+                                <span className="type-badge">
+                                    Interview
+                                </span>
+
+                                <h3>
+                                    Interview
+                                </h3>
+
+                                <p>
+                                    <strong>Date:</strong>{" "}
+                                    {new Date(
+                                        interview.scheduledAt
+                                    ).toLocaleString()}
+                                </p>
+
+                                <p>
+                                    <strong>Duration:</strong>{" "}
+                                    {interview.duration} minutes
+                                </p>
+
+                                <p>
+                                    <strong>Scheduled by:</strong>{" "}
+                                    {
+                                        interview.scheduledBy?.companyName ||
+                                        interview.scheduledBy?.universityName ||
+                                        interview.scheduledBy?.name ||
+                                        "Organization"
+                                    }
+                                </p>
+
+                                {interview.meetingLink && (
+
+                                    <p>
+
+                                        <strong>Meeting:</strong>{" "}
+
+                                        <a
+                                            href={interview.meetingLink}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            Join Meeting
+                                        </a>
+
+                                    </p>
+
+                                )}
+
+                                {interview.notes && (
+
+                                    <p>
+                                        <strong>Notes:</strong>{" "}
+                                        {interview.notes}
+                                    </p>
+
+                                )}
+
+                            </div>
+
+                            <div className="application-status">
+
+                                <span className="badge-success">
+                                    Scheduled
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    ))}
+
+                </div>
+
+            )}
+
             <h2>My Applications</h2>
 
             {
-                loading ?
-                (
+                loading ? (
+
                     <p>Loading your applications...</p>
-                )
-                :
-                (
+
+                ) : (
+
                     <div>
 
                         <div className="stats-row">
 
                             <div
-                                className={activeFilter === "all" ? "stat-box active" : "stat-box"}
-                                onClick={() => setActiveFilter("all")}
+                                className={
+                                    activeFilter === "all"
+                                        ? "stat-box active"
+                                        : "stat-box"
+                                }
+                                onClick={() =>
+                                    setActiveFilter("all")
+                                }
                             >
-                                <p className="stat-number">{stats.total}</p>
-                                <p className="stat-label">Total</p>
+
+                                <p className="stat-number">
+                                    {stats.total}
+                                </p>
+
+                                <p className="stat-label">
+                                    Total
+                                </p>
+
                             </div>
 
                             <div
-                                className={activeFilter === "pending" ? "stat-box stat-pending active" : "stat-box stat-pending"}
-                                onClick={() => setActiveFilter("pending")}
+                                className={
+                                    activeFilter === "pending"
+                                        ? "stat-box stat-pending active"
+                                        : "stat-box stat-pending"
+                                }
+                                onClick={() =>
+                                    setActiveFilter("pending")
+                                }
                             >
-                                <p className="stat-number">{stats.pending}</p>
-                                <p className="stat-label">Pending</p>
+
+                                <p className="stat-number">
+                                    {stats.pending}
+                                </p>
+
+                                <p className="stat-label">
+                                    Pending
+                                </p>
+
                             </div>
 
                             <div
-                                className={activeFilter === "accepted" ? "stat-box stat-accepted active" : "stat-box stat-accepted"}
-                                onClick={() => setActiveFilter("accepted")}
+                                className={
+                                    activeFilter === "accepted"
+                                        ? "stat-box stat-accepted active"
+                                        : "stat-box stat-accepted"
+                                }
+                                onClick={() =>
+                                    setActiveFilter("accepted")
+                                }
                             >
-                                <p className="stat-number">{stats.accepted}</p>
-                                <p className="stat-label">Accepted</p>
+
+                                <p className="stat-number">
+                                    {stats.accepted}
+                                </p>
+
+                                <p className="stat-label">
+                                    Accepted
+                                </p>
+
                             </div>
 
                             <div
-                                className={activeFilter === "rejected" ? "stat-box stat-rejected active" : "stat-box stat-rejected"}
-                                onClick={() => setActiveFilter("rejected")}
+                                className={
+                                    activeFilter === "rejected"
+                                        ? "stat-box stat-rejected active"
+                                        : "stat-box stat-rejected"
+                                }
+                                onClick={() =>
+                                    setActiveFilter("rejected")
+                                }
                             >
-                                <p className="stat-number">{stats.rejected}</p>
-                                <p className="stat-label">Rejected</p>
+
+                                <p className="stat-number">
+                                    {stats.rejected}
+                                </p>
+
+                                <p className="stat-label">
+                                    Rejected
+                                </p>
+
                             </div>
 
                             <div
-                                className={activeFilter === "withdrawn" ? "stat-box active" : "stat-box"}
-                                onClick={() => setActiveFilter("withdrawn")}
+                                className={
+                                    activeFilter === "withdrawn"
+                                        ? "stat-box active"
+                                        : "stat-box"
+                                }
+                                onClick={() =>
+                                    setActiveFilter("withdrawn")
+                                }
                             >
-                                <p className="stat-number">{stats.withdrawn}</p>
-                                <p className="stat-label">Withdrawn</p>
+
+                                <p className="stat-number">
+                                    {stats.withdrawn}
+                                </p>
+
+                                <p className="stat-label">
+                                    Withdrawn
+                                </p>
+
                             </div>
 
                         </div>
@@ -194,36 +413,66 @@ function StudentDashboard() {
                         <div className="filter-tabs">
 
                             <button
-                                className={activeFilter === "all" ? "filter-tab active" : "filter-tab"}
-                                onClick={() => setActiveFilter("all")}
+                                className={
+                                    activeFilter === "all"
+                                        ? "filter-tab active"
+                                        : "filter-tab"
+                                }
+                                onClick={() =>
+                                    setActiveFilter("all")
+                                }
                             >
                                 All
                             </button>
 
                             <button
-                                className={activeFilter === "pending" ? "filter-tab active" : "filter-tab"}
-                                onClick={() => setActiveFilter("pending")}
+                                className={
+                                    activeFilter === "pending"
+                                        ? "filter-tab active"
+                                        : "filter-tab"
+                                }
+                                onClick={() =>
+                                    setActiveFilter("pending")
+                                }
                             >
                                 Pending
                             </button>
 
                             <button
-                                className={activeFilter === "accepted" ? "filter-tab active" : "filter-tab"}
-                                onClick={() => setActiveFilter("accepted")}
+                                className={
+                                    activeFilter === "accepted"
+                                        ? "filter-tab active"
+                                        : "filter-tab"
+                                }
+                                onClick={() =>
+                                    setActiveFilter("accepted")
+                                }
                             >
                                 Accepted
                             </button>
 
                             <button
-                                className={activeFilter === "rejected" ? "filter-tab active" : "filter-tab"}
-                                onClick={() => setActiveFilter("rejected")}
+                                className={
+                                    activeFilter === "rejected"
+                                        ? "filter-tab active"
+                                        : "filter-tab"
+                                }
+                                onClick={() =>
+                                    setActiveFilter("rejected")
+                                }
                             >
                                 Rejected
                             </button>
 
                             <button
-                                className={activeFilter === "withdrawn" ? "filter-tab active" : "filter-tab"}
-                                onClick={() => setActiveFilter("withdrawn")}
+                                className={
+                                    activeFilter === "withdrawn"
+                                        ? "filter-tab active"
+                                        : "filter-tab"
+                                }
+                                onClick={() =>
+                                    setActiveFilter("withdrawn")
+                                }
                             >
                                 Withdrawn
                             </button>
@@ -235,14 +484,34 @@ function StudentDashboard() {
 
                                 <div className="results-bar">
 
-                                    <span>{filteredApplications.length} application{filteredApplications.length !== 1 ? "s" : ""}</span>
+                                    <span>
+                                        {filteredApplications.length} application
+                                        {filteredApplications.length !== 1
+                                            ? "s"
+                                            : ""}
+                                    </span>
 
                                     <label>
+
                                         Sort by:
-                                        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                                            <option value="recent">Recently Applied</option>
-                                            <option value="deadline">Deadline Soonest</option>
+
+                                        <select
+                                            value={sortBy}
+                                            onChange={(e) =>
+                                                setSortBy(e.target.value)
+                                            }
+                                        >
+
+                                            <option value="recent">
+                                                Recently Applied
+                                            </option>
+
+                                            <option value="deadline">
+                                                Deadline Soonest
+                                            </option>
+
                                         </select>
+
                                     </label>
 
                                 </div>
@@ -251,56 +520,94 @@ function StudentDashboard() {
                         }
 
                         {
-                            filteredApplications.length === 0 ?
-                            (
-                                stats.total === 0 ?
-                                (
+                            filteredApplications.length === 0 ? (
+
+                                stats.total === 0 ? (
+
                                     <div className="empty-state">
 
-                                        <p>You haven't applied to anything yet.</p>
+                                        <p>
+                                            You haven't applied to anything yet.
+                                        </p>
 
                                         <p>
-                                            <Link to="/internships">Browse Internships</Link>
+
+                                            <Link to="/internships">
+                                                Browse Internships
+                                            </Link>
+
                                             {" "}or{" "}
-                                            <Link to="/scholarships">Browse Scholarships</Link>
+
+                                            <Link to="/scholarships">
+                                                Browse Scholarships
+                                            </Link>
+
                                         </p>
 
                                     </div>
+
+                                ) : (
+
+                                    <p>
+                                        No applications in this category yet.
+                                    </p>
+
                                 )
-                                :
-                                (
-                                    <p>No applications in this category yet.</p>
-                                )
-                            )
-                            :
-                            (
+
+                            ) : (
+
                                 sortedApplications.map((app) => (
 
-                                    <div key={app._id} className="application-row">
+                                    <div
+                                        key={app._id}
+                                        className="application-row"
+                                    >
 
                                         <div>
 
-                                            <span className="type-badge">{app.opportunityType}</span>
+                                            <span className="type-badge">
+                                                {app.opportunityType}
+                                            </span>
 
                                             <h3>
-                                                {app.opportunity ? app.opportunity.title : "Opportunity no longer available"}
+
+                                                {
+                                                    app.opportunity
+                                                        ? app.opportunity.title
+                                                        : "Opportunity no longer available"
+                                                }
+
                                             </h3>
 
                                             <p>
+
                                                 {
                                                     app.opportunity && (
-                                                        app.opportunityType === "Internship" ?
-                                                        app.opportunity.company :
-                                                        app.opportunity.university
+                                                        app.opportunityType === "Internship"
+                                                            ? app.opportunity.company
+                                                            : app.opportunity.university
                                                     )
                                                 }
+
                                             </p>
 
-                                            <p>Applied on {new Date(app.createdAt).toLocaleDateString()}</p>
+                                            <p>
+                                                Applied on{" "}
+                                                {new Date(
+                                                    app.createdAt
+                                                ).toLocaleDateString()}
+                                            </p>
 
                                             {
                                                 app.opportunity && (
-                                                    <p>Deadline: {new Date(app.opportunity.deadline).toLocaleDateString()}</p>
+
+                                                    <p>
+                                                        Deadline:{" "}
+                                                        {new Date(
+                                                            app.opportunity.deadline
+                                                        ).toLocaleDateString()}
+                                                    </p>
+
                                                 )
                                             }
 
@@ -308,20 +615,34 @@ function StudentDashboard() {
 
                                         <div className="application-status">
 
-                                            <span className={
-                                                app.status === "accepted" ? "badge-success" :
-                                                app.status === "pending" ? "badge-pending" :
-                                                app.status === "rejected" ? "badge-danger" :
-                                                "badge-neutral"
-                                            }>
+                                            <span
+                                                className={
+                                                    app.status === "accepted"
+                                                        ? "badge-success"
+                                                        : app.status === "pending"
+                                                            ? "badge-pending"
+                                                            : app.status === "rejected"
+                                                                ? "badge-danger"
+                                                                : "badge-neutral"
+                                                }
+                                            >
                                                 {app.status}
                                             </span>
 
                                             {
-                                                (app.status === "pending" || app.status === "accepted") && (
-                                                    <button onClick={() => handleWithdraw(app._id)}>
+                                                (
+                                                    app.status === "pending" ||
+                                                    app.status === "accepted"
+                                                ) && (
+
+                                                    <button
+                                                        onClick={() =>
+                                                            handleWithdraw(app._id)
+                                                        }
+                                                    >
                                                         Withdraw
                                                     </button>
+
                                                 )
                                             }
 
@@ -330,10 +651,12 @@ function StudentDashboard() {
                                     </div>
 
                                 ))
+
                             )
                         }
 
                     </div>
+
                 )
             }
 

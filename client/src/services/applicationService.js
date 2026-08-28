@@ -19,3 +19,6 @@ export const updateApplicationStatus = (id, status) => {
 export const withdrawApplication = (id) => {
     return api.put(`/applications/${id}/withdraw`);
 };
+export const getApplicationsForOwner = (ownerId) => {
+    return api.get(`/applications/owner/${ownerId}`);
+};

@@ -2,15 +2,18 @@ const express=require("express");
 
 const router=express.Router();
 
-const{
+const {
     applyForOpportunity,
     getApplicationsForOpportunity,
     getMyApplications,
+    getApplicationsForOwner,
     updateApplicationStatus,
     withdrawApplication
-}=require("../controllers/applicationController");
+} = require("../controllers/applicationController");
 
 router.post("/",applyForOpportunity);
+
+router.get("/owner/:ownerId", getApplicationsForOwner);
 
 router.get("/opportunity/:opportunityId",getApplicationsForOpportunity);
 

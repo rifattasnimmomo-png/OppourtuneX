@@ -8,7 +8,10 @@ import { addBookmark, removeBookmark, updateBookmarkNote } from "../services/boo
 function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
 
     const user = JSON.parse(localStorage.getItem("user"));
-    const isOwner = internship.createdBy === user.id;
+
+    const isOwner =
+        String(internship.createdBy) === String(user.id);
+
     const isBookmarked = !!myBookmark;
 
     const [isEditing, setIsEditing] = useState(false);
@@ -18,21 +21,114 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
     const [isEditingNote, setIsEditingNote] = useState(false);
     const [draftNote, setDraftNote] = useState("");
 
-    const daysLeft = Math.ceil((new Date(internship.deadline) - new Date()) / (1000 * 60 * 60 * 24));
-    const isClosingSoon = daysLeft >= 0 && daysLeft <= 7;
-    const isExpired = daysLeft < 0;
+    const [isCompared, setIsCompared] = useState(false);
+
+    const daysLeft = Math.ceil(
+        (new Date(internship.deadline) - new Date()) /
+        (1000 * 60 * 60 * 24)
+    );
+
+    const isClosingSoon =
+        daysLeft >= 0 && daysLeft <= 7;
+
+    const isExpired =
+        daysLeft < 0;
+
 
     useEffect(() => {
 
-        if (isOwner) loadApplicants();
+        if (isOwner) {
+            loadApplicants();
+        }
+
+        checkComparison();
 
     }, []);
+
+
+    const checkComparison = () => {
+
+        const saved =
+            JSON.parse(
+                localStorage.getItem("comparisonOpportunities") || "[]"
+            );
+
+        const exists =
+            saved.some(
+                (item) =>
+                    String(item._id) === String(internship._id)
+            );
+
+        setIsCompared(exists);
+
+    };
+
+
+    const handleCompare = () => {
+
+        const saved =
+            JSON.parse(
+                localStorage.getItem("comparisonOpportunities") || "[]"
+            );
+
+        if (isCompared) {
+
+            const updated =
+                saved.filter(
+                    (item) =>
+                        String(item._id) !== String(internship._id)
+                );
+
+            localStorage.setItem(
+                "comparisonOpportunities",
+                JSON.stringify(updated)
+            );
+
+            setIsCompared(false);
+
+            return;
+        }
+
+
+        if (saved.length >= 4) {
+
+            alert("You can compare up to 4 opportunities at a time.");
+
+            return;
+
+        }
+
+
+        const opportunityForComparison = {
+            ...internship,
+            opportunityType: "Internship"
+        };
+
+
+        const updated = [
+            ...saved,
+            opportunityForComparison
+        ];
+
+
+        localStorage.setItem(
+            "comparisonOpportunities",
+            JSON.stringify(updated)
+        );
+
+        setIsCompared(true);
+
+    };
+
 
     const handleUpdate = async (data) => {
 
         try {
 
-            await updateInternship(internship._id, data);
+            await updateInternship(
+                internship._id,
+                data
+            );
 
             setIsEditing(false);
 
@@ -48,13 +144,22 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
 
     };
 
+
     const handleDelete = async () => {
 
-        if (!window.confirm("Delete this internship posting?")) return;
+        if (
+            !window.confirm(
+                "Delete this internship posting?"
+            )
+        ) {
+            return;
+        }
 
         try {
 
-            await deleteInternship(internship._id);
+            await deleteInternship(
+                internship._id
+            );
 
             refresh();
 
@@ -68,11 +173,15 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
 
     };
 
+
     const loadApplicants = async () => {
 
         try {
 
-            const res = await getApplicationsForOpportunity(internship._id);
+            const res =
+                await getApplicationsForOpportunity(
+                    internship._id
+                );
 
             setApplicants(res.data);
 
@@ -86,19 +195,29 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
 
     };
 
+
     const toggleApplicants = () => {
 
-        if (!showApplicants) loadApplicants();
+        if (!showApplicants) {
+            loadApplicants();
+        }
 
         setShowApplicants(!showApplicants);
 
     };
 
-    const handleDecision = async (applicationId, status) => {
+
+    const handleDecision = async (
+        applicationId,
+        status
+    ) => {
 
         try {
 
-            await updateApplicationStatus(applicationId, status);
+            await updateApplicationStatus(
+                applicationId,
+                status
+            );
 
             loadApplicants();
 
@@ -112,9 +231,16 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
 
     };
 
+
     const handleApply = async () => {
 
-        if (!window.confirm("Apply to this internship?")) return;
+        if (
+            !window.confirm(
+                "Apply to this internship?"
+            )
+        ) {
+            return;
+        }
 
         setIsApplying(true);
 
@@ -144,13 +270,22 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
 
     };
 
+
     const handleWithdraw = async () => {
 
-        if (!window.confirm("Withdraw this application?")) return;
+        if (
+            !window.confirm(
+                "Withdraw this application?"
+            )
+        ) {
+            return;
+        }
 
         try {
 
-            await withdrawApplication(myApplication._id);
+            await withdrawApplication(
+                myApplication._id
+            );
 
             refresh();
 
@@ -164,13 +299,16 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
 
     };
 
+
     const handleToggleBookmark = async () => {
 
         try {
 
             if (myBookmark) {
 
-                await removeBookmark(myBookmark._id);
+                await removeBookmark(
+                    myBookmark._id
+                );
 
             }
 
@@ -196,11 +334,15 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
 
     };
 
+
     const handleSaveNote = async () => {
 
         try {
 
-            await updateBookmarkNote(myBookmark._id, draftNote);
+            await updateBookmarkNote(
+                myBookmark._id,
+                draftNote
+            );
 
             setIsEditingNote(false);
 
@@ -216,16 +358,28 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
 
     };
 
-    const formatRelativeDays = (dateString) => {
 
-        const days = Math.floor((new Date() - new Date(dateString)) / (1000 * 60 * 60 * 24));
+    const formatRelativeDays = (
+        dateString
+    ) => {
 
-        if (days === 0) return "today";
-        if (days === 1) return "1 day ago";
+        const days = Math.floor(
+            (new Date() - new Date(dateString)) /
+            (1000 * 60 * 60 * 24)
+        );
+
+        if (days === 0) {
+            return "today";
+        }
+
+        if (days === 1) {
+            return "1 day ago";
+        }
 
         return `${days} days ago`;
 
     };
+
 
     if (isEditing) {
 
@@ -237,7 +391,9 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
                     initialValues={internship}
                     onSubmit={handleUpdate}
                     submitLabel="Save Changes"
-                    onCancel={() => setIsEditing(false)}
+                    onCancel={() =>
+                        setIsEditing(false)
+                    }
                 />
 
             </div>
@@ -246,42 +402,118 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
 
     }
 
+
     return (
 
         <div className="post-card">
 
-            <h3>{internship.title}</h3>
+            <h3>
+                {internship.title}
+            </h3>
+
 
             {
                 isClosingSoon && (
-                    <span className="badge-warning">⏰ Closing Soon</span>
+
+                    <span className="badge-warning">
+                        ⏰ Closing Soon
+                    </span>
+
                 )
             }
 
-            <button
-                className={isBookmarked ? "bookmark-btn active" : "bookmark-btn"}
-                onClick={handleToggleBookmark}
+
+            <div
+                style={{
+                    display: "flex",
+                    gap: "10px",
+                    flexWrap: "wrap",
+                    marginBottom: "10px"
+                }}
             >
-                {isBookmarked ? "★ Bookmarked" : "☆ Bookmark"}
-            </button>
 
-            <p><b>{internship.company}</b> — {internship.location}</p>
+                <button
+                    className={
+                        isBookmarked
+                            ? "bookmark-btn active"
+                            : "bookmark-btn"
+                    }
+                    onClick={handleToggleBookmark}
+                >
+                    {
+                        isBookmarked
+                            ? "★ Bookmarked"
+                            : "☆ Bookmark"
+                    }
+                </button>
 
-            <p>{internship.description}</p>
 
-            <p>Work Type: {internship.workType}</p>
+                <button
+                    onClick={handleCompare}
+                >
+                    {
+                        isCompared
+                            ? "✓ Remove from Compare"
+                            : "＋ Add to Compare"
+                    }
+                </button>
 
-            <p>Stipend: {internship.stipend ? internship.stipend : "Unpaid"}</p>
+            </div>
 
-            <p>Duration: {internship.duration}</p>
 
-            <p>Deadline: {new Date(internship.deadline).toLocaleDateString()}</p>
+            <p>
+                <b>{internship.company}</b>
+                {" — "}
+                {internship.location}
+            </p>
+
+
+            <p>
+                {internship.description}
+            </p>
+
+
+            <p>
+                Work Type: {internship.workType}
+            </p>
+
+
+            <p>
+                Stipend:{" "}
+                {
+                    internship.stipend
+                        ? internship.stipend
+                        : "Unpaid"
+                }
+            </p>
+
+
+            <p>
+                Duration: {internship.duration}
+            </p>
+
+
+            <p>
+                Deadline:{" "}
+                {
+                    new Date(
+                        internship.deadline
+                    ).toLocaleDateString()
+                }
+            </p>
+
 
             {
                 internship.skills?.length > 0 && (
-                    <p>Skills: {internship.skills.join(", ")}</p>
+
+                    <p>
+                        Skills:{" "}
+                        {internship.skills.join(", ")}
+                    </p>
+
                 )
             }
+
 
             {
                 user.role === "student" && (
@@ -289,64 +521,152 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
                     <div>
 
                         {
-                            isExpired && (!myApplication || myApplication.status === "withdrawn" || myApplication.status === "rejected") && (
-                                <p><span className="badge-neutral">Applications Closed</span></p>
+                            isExpired &&
+                            (
+                                !myApplication ||
+                                myApplication.status === "withdrawn" ||
+                                myApplication.status === "rejected"
+                            ) && (
+
+                                <p>
+                                    <span className="badge-neutral">
+                                        Applications Closed
+                                    </span>
+                                </p>
+
                             )
                         }
 
+
                         {
-                            !isExpired && (!myApplication || myApplication.status === "withdrawn" || myApplication.status === "rejected") && (
-                                <button onClick={handleApply} disabled={isApplying}>
-                                    {isApplying ? "Applying..." : "Apply"}
+                            !isExpired &&
+                            (
+                                !myApplication ||
+                                myApplication.status === "withdrawn" ||
+                                myApplication.status === "rejected"
+                            ) && (
+
+                                <button
+                                    onClick={handleApply}
+                                    disabled={isApplying}
+                                >
+                                    {
+                                        isApplying
+                                            ? "Applying..."
+                                            : "Apply"
+                                    }
                                 </button>
+
                             )
                         }
 
+
                         {
-                            myApplication && myApplication.status === "pending" && (
+                            myApplication &&
+                            myApplication.status === "pending" && (
 
                                 <p>
-                                    <span className="badge-pending">Pending</span>{" "}
-                                    Applied on {new Date(myApplication.createdAt).toLocaleDateString()}{" "}
-                                    <button onClick={handleWithdraw}>
+
+                                    <span className="badge-pending">
+                                        Pending
+                                    </span>
+
+                                    {" "}
+                                    Applied on{" "}
+                                    {
+                                        new Date(
+                                            myApplication.createdAt
+                                        ).toLocaleDateString()
+                                    }
+
+                                    {" "}
+
+                                    <button
+                                        onClick={handleWithdraw}
+                                    >
                                         Withdraw
                                     </button>
+
                                 </p>
 
                             )
                         }
 
+
                         {
-                            myApplication && myApplication.status === "accepted" && (
+                            myApplication &&
+                            myApplication.status === "accepted" && (
 
                                 <p>
-                                    <span className="badge-success">Accepted</span>{" "}
-                                    Applied on {new Date(myApplication.createdAt).toLocaleDateString()}{" "}
-                                    <button onClick={handleWithdraw}>
+
+                                    <span className="badge-success">
+                                        Accepted
+                                    </span>
+
+                                    {" "}
+                                    Applied on{" "}
+                                    {
+                                        new Date(
+                                            myApplication.createdAt
+                                        ).toLocaleDateString()
+                                    }
+
+                                    {" "}
+
+                                    <button
+                                        onClick={handleWithdraw}
+                                    >
                                         Withdraw
                                     </button>
+
                                 </p>
 
                             )
                         }
 
+
                         {
-                            myApplication && myApplication.status === "rejected" && (
+                            myApplication &&
+                            myApplication.status === "rejected" && (
 
                                 <p>
-                                    <span className="badge-danger">Rejected</span>{" "}
-                                    Applied on {new Date(myApplication.createdAt).toLocaleDateString()}
+
+                                    <span className="badge-danger">
+                                        Rejected
+                                    </span>
+
+                                    {" "}
+                                    Applied on{" "}
+                                    {
+                                        new Date(
+                                            myApplication.createdAt
+                                        ).toLocaleDateString()
+                                    }
+
                                 </p>
 
                             )
                         }
 
+
                         {
-                            myApplication && myApplication.status === "withdrawn" && (
+                            myApplication &&
+                            myApplication.status === "withdrawn" && (
 
                                 <p>
-                                    <span className="badge-neutral">Withdrawn</span>{" "}
-                                    Applied on {new Date(myApplication.createdAt).toLocaleDateString()}
+
+                                    <span className="badge-neutral">
+                                        Withdrawn
+                                    </span>
+
+                                    {" "}
+                                    Applied on{" "}
+                                    {
+                                        new Date(
+                                            myApplication.createdAt
+                                        ).toLocaleDateString()
+                                    }
+
                                 </p>
 
                             )
@@ -357,22 +677,38 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
                 )
             }
 
+
             {
                 isOwner && (
 
                     <div>
 
-                        <button onClick={() => setIsEditing(true)}>
+                        <button
+                            onClick={() =>
+                                setIsEditing(true)
+                            }
+                        >
                             Edit
                         </button>
 
-                        <button onClick={handleDelete}>
+
+                        <button
+                            onClick={handleDelete}
+                        >
                             Delete
                         </button>
 
-                        <button onClick={toggleApplicants}>
-                            {showApplicants ? "Hide Applicants" : `View Applicants (${applicants.length})`}
+
+                        <button
+                            onClick={toggleApplicants}
+                        >
+                            {
+                                showApplicants
+                                    ? "Hide Applicants"
+                                    : `View Applicants (${applicants.length})`
+                            }
                         </button>
+
 
                         {
                             showApplicants && (
@@ -380,50 +716,98 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
                                 <div>
 
                                     {
-                                        applicants.length === 0 ?
-                                        (
-                                            <p>No applicants yet.</p>
-                                        )
-                                        :
-                                        (
-                                            applicants.map((app) => (
+                                        applicants.length === 0
+                                            ? (
 
-                                                <div key={app._id} className="applicant-row">
+                                                <p>
+                                                    No applicants yet.
+                                                </p>
 
-                                                    <p>
-                                                        {app.student?.name} ({app.student?.email}){" "}
-                                                        <span className={
-                                                            app.status === "accepted" ? "badge-success" :
-                                                            app.status === "pending" ? "badge-pending" :
-                                                            app.status === "rejected" ? "badge-danger" :
-                                                            "badge-neutral"
-                                                        }>
-                                                            {app.status}
-                                                        </span>
-                                                    </p>
+                                            )
+                                            : (
 
-                                                    {
-                                                        app.status === "pending" && (
+                                                applicants.map(
+                                                    (app) => (
 
-                                                            <div>
+                                                        <div
+                                                            key={app._id}
+                                                            className="applicant-row"
+                                                        >
 
-                                                                <button onClick={() => handleDecision(app._id, "accepted")}>
-                                                                    Accept
-                                                                </button>
+                                                            <p>
 
-                                                                <button onClick={() => handleDecision(app._id, "rejected")}>
-                                                                    Reject
-                                                                </button>
+                                                                {
+                                                                    app.student?.name
+                                                                }
 
-                                                            </div>
+                                                                {" "}
 
-                                                        )
-                                                    }
+                                                                (
+                                                                {
+                                                                    app.student?.email
+                                                                }
+                                                                )
 
-                                                </div>
+                                                                {" "}
 
-                                            ))
-                                        )
+                                                                <span
+                                                                    className={
+                                                                        app.status === "accepted"
+                                                                            ? "badge-success"
+                                                                            : app.status === "pending"
+                                                                            ? "badge-pending"
+                                                                            : app.status === "rejected"
+                                                                            ? "badge-danger"
+                                                                            : "badge-neutral"
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        app.status
+                                                                    }
+                                                                </span>
+
+                                                            </p>
+
+
+                                                            {
+                                                                app.status === "pending" && (
+
+                                                                    <div>
+
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                handleDecision(
+                                                                                    app._id,
+                                                                                    "accepted"
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            Accept
+                                                                        </button>
+
+
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                handleDecision(
+                                                                                    app._id,
+                                                                                    "rejected"
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            Reject
+                                                                        </button>
+
+                                                                    </div>
+
+                                                                )
+                                                            }
+
+                                                        </div>
+
+                                                    )
+                                                )
+
+                                            )
                                     }
 
                                 </div>
@@ -436,51 +820,93 @@ function InternshipCard({ internship, refresh, myApplication, myBookmark }) {
                 )
             }
 
+
             {
                 isBookmarked && (
 
                     <div className="bookmark-note">
 
                         <p className="bookmark-meta">
-                            Bookmarked {formatRelativeDays(myBookmark.createdAt)}
+
+                            Bookmarked{" "}
+                            {
+                                formatRelativeDays(
+                                    myBookmark.createdAt
+                                )
+                            }
+
                         </p>
 
+
                         {
-                            isEditingNote ?
-                            (
-                                <div>
+                            isEditingNote
+                                ? (
 
-                                    <textarea
-                                        rows="2"
-                                        value={draftNote}
-                                        onChange={(e) => setDraftNote(e.target.value)}
-                                        placeholder="Add a note..."
-                                    />
+                                    <div>
 
-                                    <button onClick={handleSaveNote}>
-                                        Save Note
-                                    </button>
+                                        <textarea
+                                            rows="2"
+                                            value={draftNote}
+                                            onChange={(e) =>
+                                                setDraftNote(
+                                                    e.target.value
+                                                )
+                                            }
+                                            placeholder="Add a note..."
+                                        />
 
-                                    <button onClick={() => setIsEditingNote(false)}>
-                                        Cancel
-                                    </button>
 
-                                </div>
-                            )
-                            :
-                            (
-                                <p>
-                                    {myBookmark.note ? `Note: ${myBookmark.note}` : "No note added"}{" "}
-                                    <button
-                                        onClick={() => {
-                                            setDraftNote(myBookmark.note || "");
-                                            setIsEditingNote(true);
-                                        }}
-                                    >
-                                        {myBookmark.note ? "Edit Note" : "Add Note"}
-                                    </button>
-                                </p>
-                            )
+                                        <button
+                                            onClick={handleSaveNote}
+                                        >
+                                            Save Note
+                                        </button>
+
+
+                                        <button
+                                            onClick={() =>
+                                                setIsEditingNote(false)
+                                            }
+                                        >
+                                            Cancel
+                                        </button>
+
+                                    </div>
+
+                                )
+                                : (
+
+                                    <p>
+
+                                        {
+                                            myBookmark.note
+                                                ? `Note: ${myBookmark.note}`
+                                                : "No note added"
+                                        }
+
+                                        {" "}
+
+                                        <button
+                                            onClick={() => {
+
+                                                setDraftNote(
+                                                    myBookmark.note || ""
+                                                );
+
+                                                setIsEditingNote(true);
+
+                                            }}
+                                        >
+                                            {
+                                                myBookmark.note
+                                                    ? "Edit Note"
+                                                    : "Add Note"
+                                            }
+                                        </button>
+
+                                    </p>
+
+                                )
                         }
 
                     </div>
