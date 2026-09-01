@@ -1,183 +1,159 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import {
-getAssessmentById,
-getAllSubmissions
-} from "../services/assessmentService";
+import { useParams } from "react-router-dom";
+import { getAllSubmissions } from "../services/assessmentService";
 
 function AssessmentSubmissions() {
-const { id } = useParams();
+    const { id } = useParams();
 
-```
-const [assessment, setAssessment] = useState(null);
-const [submissions, setSubmissions] = useState([]);
-const [loading, setLoading] = useState(true);
-const [message, setMessage] = useState("");
+    const [submissions, setSubmissions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [message, setMessage] = useState("");
 
-useEffect(() => {
-    loadSubmissions();
-}, [id]);
+    useEffect(() => {
+        loadSubmissions();
+    }, []);
 
-const loadSubmissions = async () => {
-    try {
-        setLoading(true);
-        setMessage("");
+    const loadSubmissions = async () => {
+        try {
+            const response = await getAllSubmissions(id);
+            setSubmissions(response.data || []);
+        } catch (error) {
+            console.log(error);
+            setMessage(
+                error.response?.data?.message ||
+                "Failed to load submissions."
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        const assessmentResponse = await getAssessmentById(id);
-        const submissionsResponse = await getAllSubmissions(id);
-
-        setAssessment(assessmentResponse.data);
-        setSubmissions(submissionsResponse.data || []);
-    } catch (error) {
-        console.log(error);
-
-        setMessage(
-            error.response?.data?.message ||
-            "Failed to load submissions."
-        );
-    } finally {
-        setLoading(false);
+    if (loading) {
+        return <h1>Assessment Submissions</h1>;
     }
-};
 
-if (loading) {
-    return <h1>Loading Submissions...</h1>;
-}
+    return (
+        <div>
+            <h1>Assessment Submissions</h1>
 
-return (
-    <div>
-        <h1>Assessment Submissions</h1>
+            {message && (
+                <div
+                    style={{
+                        background: "#f3f4f6",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        marginBottom: "20px"
+                    }}
+                >
+                    {message}
+                </div>
+            )}
 
-        {assessment && (
-            <div
-                style={{
-                    background: "white",
-                    padding: "20px",
-                    marginBottom: "20px",
-                    borderRadius: "10px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,.1)"
-                }}
-            >
-                <h2>{assessment.title}</h2>
+            {submissions.length === 0 ? (
+                <div
+                    style={{
+                        background: "white",
+                        padding: "25px",
+                        borderRadius: "10px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,.1)"
+                    }}
+                >
+                    No student has submitted this assessment yet.
+                </div>
+            ) : (
+                submissions.map((submission, studentIndex) => (
+                    <div
+                        key={submission._id}
+                        style={{
+                            background: "white",
+                            padding: "20px",
+                            marginBottom: "20px",
+                            borderRadius: "10px",
+                            boxShadow: "0 2px 8px rgba(0,0,0,.1)"
+                        }}
+                    >
+                        <h2>
+                            {submission.student?.name || "Student"}
+                        </h2>
 
-                {assessment.description && (
-                    <p>{assessment.description}</p>
-                )}
+                        <p>
+                            <strong>Email:</strong>{" "}
+                            {submission.student?.email}
+                        </p>
 
-                <p>
-                    Questions:{" "}
-                    <strong>
-                        {assessment.questions
-                            ? assessment.questions.length
-                            : 0}
-                    </strong>
-                </p>
-            </div>
-        )}
+                        <p>
+                            <strong>Submitted:</strong>{" "}
+                            {new Date(
+                                submission.createdAt
+                            ).toLocaleString()}
+                        </p>
 
-        {message && (
-            <div
-                style={{
-                    padding: "12px",
-                    marginBottom: "20px",
-                    background: "#f3f4f6",
-                    borderRadius: "8px"
-                }}
-            >
-                {message}
-            </div>
-        )}
+                        <p>
+                            <strong>Score:</strong>{" "}
+                            {submission.score} / {submission.totalMarks}
+                        </p>
 
-        {submissions.length === 0 ? (
-            <div
-                style={{
-                    background: "white",
-                    padding: "30px",
-                    borderRadius: "10px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,.1)"
-                }}
-            >
-                <p>
-                    No students have submitted this assessment yet.
-                </p>
-            </div>
-        ) : (
-            <div>
-                {submissions.map((submission, index) => {
-                    const percentage =
-                        submission.totalQuestions > 0
-                            ? Math.round(
-                                  (submission.score /
-                                      submission.totalQuestions) *
-                                      100
-                              )
-                            : 0;
+                        <hr style={{ margin: "20px 0" }} />
 
-                    return (
-                        <div
-                            key={index}
-                            style={{
-                                background: "white",
-                                padding: "20px",
-                                marginBottom: "15px",
-                                borderRadius: "10px",
-                                boxShadow:
-                                    "0 2px 8px rgba(0,0,0,.1)"
-                            }}
-                        >
-                            <h3>
-                                {submission.student &&
-                                submission.student.name
-                                    ? submission.student.name
-                                    : "Unknown Student"}
-                            </h3>
+                        <h3>Student Answers</h3>
 
-                            <p>
-                                Email:{" "}
-                                {submission.student &&
-                                submission.student.email
-                                    ? submission.student.email
-                                    : "Not available"}
-                            </p>
+                        {submission.answers &&
+                        submission.answers.length > 0 ? (
+                            submission.answers.map((answer, index) => (
+                                <div
+                                    key={index}
+                                    style={{
+                                        border: "1px solid #ddd",
+                                        borderRadius: "8px",
+                                        padding: "15px",
+                                        marginBottom: "15px",
+                                        background: "#fafafa"
+                                    }}
+                                >
+                                    <p>
+                                        <strong>
+                                            Question {index + 1}
+                                        </strong>
+                                    </p>
 
-                            <p>
-                                Score:{" "}
-                                <strong>
-                                    {submission.score} /{" "}
-                                    {submission.totalQuestions}
-                                </strong>
-                            </p>
+                                    <p>{answer.question}</p>
 
-                            <p>
-                                Percentage:{" "}
-                                <strong>
-                                    {percentage}%
-                                </strong>
-                            </p>
+                                    <p>
+                                        <strong>
+                                            Student Answer:
+                                        </strong>{" "}
+                                        {answer.selectedOption}
+                                    </p>
 
-                            <p>
-                                Submitted on:{" "}
-                                {submission.submittedAt
-                                    ? new Date(
-                                          submission.submittedAt
-                                      ).toLocaleString()
-                                    : "Not available"}
-                            </p>
-                        </div>
-                    );
-                })}
-            </div>
-        )}
+                                    <p>
+                                        <strong>
+                                            Correct Answer:
+                                        </strong>{" "}
+                                        {answer.correctOption}
+                                    </p>
 
-        <div style={{ marginTop: "20px" }}>
-            <Link to="/assessments">
-                <button>Back to Assessments</button>
-            </Link>
+                                    <p
+                                        style={{
+                                            color: answer.isCorrect
+                                                ? "green"
+                                                : "red",
+                                            fontWeight: "bold"
+                                        }}
+                                    >
+                                        {answer.isCorrect
+                                            ? "Correct"
+                                            : "Incorrect"}
+                                    </p>
+                                </div>
+                            ))
+                        ) : (
+                            <p>No answers available.</p>
+                        )}
+                    </div>
+                ))
+            )}
         </div>
-    </div>
-);
-```
-
+    );
 }
 
 export default AssessmentSubmissions;

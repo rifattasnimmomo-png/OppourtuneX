@@ -10,97 +10,76 @@ function TakeAssessment() {
     const navigate = useNavigate();
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const isStudent = user.role === "student";
 
     const [assessment, setAssessment] = useState(null);
     const [answers, setAnswers] = useState({});
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
     const [message, setMessage] = useState("");
 
     useEffect(() => {
         loadAssessment();
-    }, [id]);
+    }, []);
 
     const loadAssessment = async () => {
         try {
-            const response = await getAssessmentById(id);
-
-            setAssessment(response.data);
-        } catch (error) {
-            console.log(error);
-
-            setMessage(
-                error.response?.data?.message ||
-                "Failed to load assessment."
-            );
+            const res = await getAssessmentById(id);
+            setAssessment(res.data);
+        } catch (err) {
+            console.log(err);
+            setMessage("Failed to load assessment.");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleAnswerChange = (questionId, selectedAnswer) => {
-        setAnswers({
-            ...answers,
-            [questionId]: Number(selectedAnswer)
-        });
+    const chooseAnswer = (questionIndex, optionIndex) => {
+        if (!isStudent) return;
+
+        setAnswers((prev) => ({
+            ...prev,
+            [questionIndex]: optionIndex
+        }));
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
+        if (!assessment || !isStudent) return;
 
-        if (!user?.id) {
-            setMessage("Please log in again.");
+        if (Object.keys(answers).length !== assessment.questions.length) {
+            setMessage("Please answer all questions.");
             return;
         }
-
-        if (user.role !== "student") {
-            setMessage("Only students can submit assessments.");
-            return;
-        }
-
-        const unansweredQuestions = assessment.questions.filter(
-            (question) =>
-                answers[question._id] === undefined
-        );
-
-        if (unansweredQuestions.length > 0) {
-            setMessage(
-                `Please answer all questions. ${unansweredQuestions.length} question(s) remaining.`
-            );
-            return;
-        }
-
-        const formattedAnswers = Object.entries(answers).map(
-            ([questionId, selectedAnswer]) => ({
-                questionId,
-                selectedAnswer
-            })
-        );
 
         try {
             setSubmitting(true);
             setMessage("");
 
-            const response = await submitAssessment(id, {
+            // IMPORTANT: This matches your backend schema.
+            const submissionAnswers = assessment.questions.map(
+                (question, index) => ({
+                    questionId: question._id,
+                    selectedAnswer: answers[index]
+                })
+            );
+
+            await submitAssessment(id, {
                 student: user.id,
-                answers: formattedAnswers
+                answers: submissionAnswers,
+                totalQuestions: assessment.questions.length
             });
 
-            const result = response.data.result;
+            setSubmitted(true);
 
-            navigate(
-                `/assessments/${id}/result/${user.id}`,
-                {
-                    state: {
-                        result
-                    }
-                }
-            );
-        } catch (error) {
-            console.log(error);
+            setTimeout(() => {
+                navigate("/assessments");
+            }, 2500);
 
+        } catch (err) {
+            console.log(err);
             setMessage(
-                error.response?.data?.message ||
+                err.response?.data?.message ||
                 "Failed to submit assessment."
             );
         } finally {
@@ -108,146 +87,102 @@ function TakeAssessment() {
         }
     };
 
-    if (loading) {
-        return <h1>Loading Assessment...</h1>;
-    }
+    if (loading) return <h1>Loading Assessment...</h1>;
 
-    if (!assessment) {
+    if (!assessment) return <h1>Assessment Not Found</h1>;
+
+    if (submitted) {
         return (
-            <div>
-                <h1>Assessment</h1>
-                <p>
-                    {message || "Assessment not found."}
-                </p>
+            <div
+                style={{
+                    background: "white",
+                    padding: "40px",
+                    borderRadius: "12px",
+                    textAlign: "center",
+                    boxShadow: "0 2px 10px rgba(0,0,0,.1)"
+                }}
+            >
+                <h1 style={{ color: "green" }}>
+                    Assessment Submitted Successfully!
+                </h1>
+
+                <p>Your assessment has been submitted to the company.</p>
+
+                <p>Redirecting back to Assessments...</p>
             </div>
         );
     }
 
     return (
         <div>
-
             <h1>{assessment.title}</h1>
 
-            {assessment.description && (
-                <p>{assessment.description}</p>
-            )}
+            {assessment.description && <p>{assessment.description}</p>}
 
             <p>
-                <strong>
-                    Questions:
-                </strong>{" "}
-                {assessment.questions.length}
-            </p>
-
-            <p>
-                <strong>
-                    Duration:
-                </strong>{" "}
-                {assessment.duration} minutes
+                <strong>Duration:</strong> {assessment.duration} minutes
             </p>
 
             {message && (
                 <div
                     style={{
-                        padding: "12px",
-                        margin: "15px 0",
                         background: "#f3f4f6",
-                        borderRadius: "8px"
+                        padding: "12px",
+                        borderRadius: "8px",
+                        marginBottom: "20px"
                     }}
                 >
                     {message}
                 </div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            {assessment.questions.map((question, qIndex) => (
+                <div
+                    key={qIndex}
+                    style={{
+                        background: "white",
+                        padding: "20px",
+                        marginBottom: "20px",
+                        borderRadius: "10px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,.1)"
+                    }}
+                >
+                    <h3>Question {qIndex + 1}</h3>
 
-                {assessment.questions.map(
-                    (question, questionIndex) => (
+                    <p>{question.question}</p>
 
+                    {question.options.map((option, optionIndex) => (
                         <div
-                            key={question._id}
-                            style={{
-                                background: "white",
-                                padding: "20px",
-                                marginBottom: "20px",
-                                borderRadius: "10px",
-                                boxShadow:
-                                    "0 2px 8px rgba(0,0,0,.1)"
-                            }}
+                            key={optionIndex}
+                            style={{ marginBottom: "10px" }}
                         >
-
-                            <h3>
-                                {questionIndex + 1}.{" "}
-                                {question.question}
-                            </h3>
-
-                            <div>
-
-                                {question.options.map(
-                                    (option, optionIndex) => (
-
-                                        <label
-                                            key={optionIndex}
-                                            style={{
-                                                display: "block",
-                                                padding: "10px",
-                                                marginBottom: "8px",
-                                                border:
-                                                    "1px solid #ddd",
-                                                borderRadius: "8px",
-                                                cursor: "pointer"
-                                            }}
-                                        >
-
-                                            <input
-                                                type="radio"
-                                                name={`question-${question._id}`}
-                                                value={optionIndex}
-                                                checked={
-                                                    answers[
-                                                        question._id
-                                                    ] === optionIndex
-                                                }
-                                                onChange={(e) =>
-                                                    handleAnswerChange(
-                                                        question._id,
-                                                        e.target.value
-                                                    )
-                                                }
-                                                style={{
-                                                    marginRight:
-                                                        "10px"
-                                                }}
-                                            />
-
-                                            {String.fromCharCode(
-                                                65 + optionIndex
-                                            )}.{" "}
-                                            {option}
-
-                                        </label>
-
-                                    )
-                                )}
-
-                            </div>
-
+                            <label>
+                                <input
+                                    type="radio"
+                                    name={`question-${qIndex}`}
+                                    checked={answers[qIndex] === optionIndex}
+                                    disabled={!isStudent}
+                                    onChange={() =>
+                                        chooseAnswer(qIndex, optionIndex)
+                                    }
+                                />{" "}
+                                {option}
+                            </label>
                         </div>
+                    ))}
+                </div>
+            ))}
 
-                    )
-                )}
-
+            {isStudent && (
                 <button
-                    type="submit"
+                    onClick={handleSubmit}
                     disabled={submitting}
                 >
                     {submitting
                         ? "Submitting..."
                         : "Submit Assessment"}
                 </button>
-
-            </form>
-
+            )}
         </div>
     );
 }

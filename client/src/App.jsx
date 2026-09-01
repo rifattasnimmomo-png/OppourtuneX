@@ -1,12 +1,10 @@
 import ProtectedRoute from "./components/ProtectedRoute";
-
 import { Routes, Route } from "react-router-dom";
 
 import DashboardLayout from "./layouts/DashboardLayout";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-
 import Notifications from "./pages/Notifications";
 
 import StudentDashboard from "./pages/StudentDashboard";
@@ -32,49 +30,29 @@ import NotFound from "./pages/NotFound";
 import CreateAssessment from "./pages/CreateAssessment";
 import Assessments from "./pages/Assessments";
 import TakeAssessment from "./pages/TakeAssessment";
+import AssessmentPreview from "./pages/AssessmentPreview";
 import AssessmentResult from "./pages/AssessmentResult";
 import AssessmentSubmissions from "./pages/AssessmentSubmissions";
 
 import ApplicationHistory from "./pages/ApplicationHistory";
-
 import OpportunityComparison from "./pages/OpportunityComparison";
-
 import Help from "./pages/Help";
-
+import StudentInterviews from "./pages/StudentInterviews";
 
 function App() {
-
     return (
         <Routes>
 
-            {/* Public Routes */}
+            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-            <Route
-                path="/"
-                element={<Login />}
-            />
-
-            <Route
-                path="/login"
-                element={<Login />}
-            />
-
-            <Route
-                path="/register"
-                element={<Register />}
-            />
-
-
-            {/* Protected Routes */}
-
-            <Route
-                element={<DashboardLayout />}
-            >
+            <Route element={<DashboardLayout />}>
 
                 <Route
                     path="/student-dashboard"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={["student"]}>
                             <StudentDashboard />
                         </ProtectedRoute>
                     }
@@ -83,7 +61,7 @@ function App() {
                 <Route
                     path="/company-dashboard"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={["company"]}>
                             <CompanyDashboard />
                         </ProtectedRoute>
                     }
@@ -92,12 +70,11 @@ function App() {
                 <Route
                     path="/university-dashboard"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRoles={["university"]}>
                             <UniversityDashboard />
                         </ProtectedRoute>
                     }
                 />
-
 
                 <Route
                     path="/feed"
@@ -135,7 +112,6 @@ function App() {
                     }
                 />
 
-
                 <Route
                     path="/messages"
                     element={
@@ -150,6 +126,15 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <OpportunityCalendar />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/student-interviews"
+                    element={
+                        <ProtectedRoute>
+                            <StudentInterviews />
                         </ProtectedRoute>
                     }
                 />
@@ -172,8 +157,59 @@ function App() {
                     }
                 />
 
+                <Route
+                    path="/assessments"
+                    element={
+                        <ProtectedRoute>
+                            <Assessments />
+                        </ProtectedRoute>
+                    }
+                />
 
-                {/* Achievements */}
+                <Route
+                    path="/assessments/create"
+                    element={
+                        <ProtectedRoute allowedRoles={["company", "university"]}>
+                            <CreateAssessment />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/assessments/:id/take"
+                    element={
+                        <ProtectedRoute allowedRoles={["student"]}>
+                            <TakeAssessment />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/assessments/:id/result/:studentId"
+                    element={
+                        <ProtectedRoute>
+                            <AssessmentResult />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/assessments/:id/submissions"
+                    element={
+                        <ProtectedRoute allowedRoles={["company", "university"]}>
+                            <AssessmentSubmissions />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/assessments/:id"
+                    element={
+                        <ProtectedRoute allowedRoles={["company", "university"]}>
+                            <AssessmentPreview />
+                        </ProtectedRoute>
+                    }
+                />
 
                 <Route
                     path="/achievements"
@@ -184,9 +220,6 @@ function App() {
                     }
                 />
 
-
-                {/* Activity Log */}
-
                 <Route
                     path="/activity-log"
                     element={
@@ -195,9 +228,6 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-
-
-                {/* Notifications */}
 
                 <Route
                     path="/notifications"
@@ -217,9 +247,6 @@ function App() {
                     }
                 />
 
-
-                {/* Application History */}
-
                 <Route
                     path="/application-history"
                     element={
@@ -228,9 +255,6 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-
-
-                {/* Opportunity Comparison */}
 
                 <Route
                     path="/compare"
@@ -241,9 +265,6 @@ function App() {
                     }
                 />
 
-
-                {/* Help / FAQ */}
-
                 <Route
                     path="/help"
                     element={
@@ -253,63 +274,9 @@ function App() {
                     }
                 />
 
-
-                {/* Assessment Routes */}
-
-                <Route
-                    path="/assessments"
-                    element={
-                        <ProtectedRoute>
-                            <Assessments />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/assessments/create"
-                    element={
-                        <ProtectedRoute>
-                            <CreateAssessment />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/assessments/:id"
-                    element={
-                        <ProtectedRoute>
-                            <TakeAssessment />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/assessments/:id/result/:studentId"
-                    element={
-                        <ProtectedRoute>
-                            <AssessmentResult />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/assessments/:id/submissions"
-                    element={
-                        <ProtectedRoute>
-                            <AssessmentSubmissions />
-                        </ProtectedRoute>
-                    }
-                />
-
             </Route>
 
-
-            {/* 404 */}
-
-            <Route
-                path="*"
-                element={<NotFound />}
-            />
+            <Route path="*" element={<NotFound />} />
 
         </Routes>
     );

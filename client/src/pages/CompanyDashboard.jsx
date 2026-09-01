@@ -1,15 +1,23 @@
 import { useEffect, useState } from "react";
+
 import { getApplicationsForOwner } from "../services/applicationService";
+
 import {
     scheduleInterview,
     getInterviewsForApplication,
     cancelInterview
 } from "../services/interviewService";
 
+import {
+    getAssessmentsForCreator
+} from "../services/assessmentService";
+
 function CompanyDashboard() {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     const [applications, setApplications] = useState([]);
+    const [assessments, setAssessments] = useState([]);
+
     const [loading, setLoading] = useState(true);
     const [selectedApplication, setSelectedApplication] = useState(null);
 
@@ -23,21 +31,31 @@ function CompanyDashboard() {
     const [message, setMessage] = useState("");
 
     useEffect(() => {
-        loadApplications();
+        loadDashboardData();
     }, []);
 
-    const loadApplications = async () => {
+    const loadDashboardData = async () => {
         if (!user?.id) {
             setLoading(false);
             return;
         }
 
         try {
-            const res = await getApplicationsForOwner(user.id);
-            setApplications(res.data || []);
+            const [applicationsRes, assessmentsRes] =
+                await Promise.all([
+                    getApplicationsForOwner(user.id),
+                    getAssessmentsForCreator(user.id)
+                ]);
+
+            setApplications(applicationsRes.data || []);
+            setAssessments(assessmentsRes.data || []);
         } catch (error) {
             console.log(error);
-            setMessage("Failed to load applications.");
+
+            setMessage(
+                error.response?.data?.message ||
+                "Failed to load dashboard data."
+            );
         } finally {
             setLoading(false);
         }
@@ -74,7 +92,9 @@ function CompanyDashboard() {
             await scheduleInterview({
                 application: selectedApplication._id,
                 scheduledBy: user.id,
-                scheduledAt: new Date(form.scheduledAt).toISOString(),
+                scheduledAt: new Date(
+                    form.scheduledAt
+                ).toISOString(),
                 duration: Number(form.duration) || 30,
                 meetingLink: form.meetingLink,
                 notes: form.notes
@@ -90,6 +110,7 @@ function CompanyDashboard() {
             });
         } catch (error) {
             console.log(error);
+
             setMessage(
                 error.response?.data?.message ||
                 "Failed to schedule interview."
@@ -99,16 +120,23 @@ function CompanyDashboard() {
 
     const handleViewInterviews = async (application) => {
         try {
-            const res = await getInterviewsForApplication(application._id);
+            const res = await getInterviewsForApplication(
+                application._id
+            );
 
             if (!res.data || res.data.length === 0) {
-                setMessage("No interviews scheduled for this application.");
+                setMessage(
+                    "No interviews scheduled for this application."
+                );
                 return;
             }
 
-            const interview = res.data[res.data.length - 1];
+            const interview =
+                res.data[res.data.length - 1];
 
-            const date = new Date(interview.scheduledAt).toLocaleString();
+            const date = new Date(
+                interview.scheduledAt
+            ).toLocaleString();
 
             const shouldCancel =
                 interview.status === "scheduled" &&
@@ -118,7 +146,10 @@ function CompanyDashboard() {
 
             if (shouldCancel) {
                 await cancelInterview(interview._id);
-                setMessage("Interview cancelled successfully.");
+
+                setMessage(
+                    "Interview cancelled successfully."
+                );
             } else {
                 setMessage(
                     `Interview: ${date} (${interview.status})`
@@ -126,7 +157,10 @@ function CompanyDashboard() {
             }
         } catch (error) {
             console.log(error);
-            setMessage("Failed to load interview information.");
+
+            setMessage(
+                "Failed to load interview information."
+            );
         }
     };
 
@@ -155,6 +189,8 @@ function CompanyDashboard() {
                 </div>
             )}
 
+            {/* ==================== APPLICANTS ==================== */}
+
             <h2>Applicants</h2>
 
             {applications.length === 0 ? (
@@ -169,7 +205,8 @@ function CompanyDashboard() {
                                 padding: "20px",
                                 marginBottom: "15px",
                                 borderRadius: "10px",
-                                boxShadow: "0 2px 8px rgba(0,0,0,.1)"
+                                boxShadow:
+                                    "0 2px 8px rgba(0,0,0,.1)"
                             }}
                         >
                             <h3>
@@ -184,7 +221,8 @@ function CompanyDashboard() {
                             </p>
 
                             <p>
-                                Type: {application.opportunityType}
+                                Type:{" "}
+                                {application.opportunityType}
                             </p>
 
                             <p>
@@ -194,10 +232,13 @@ function CompanyDashboard() {
                                 </strong>
                             </p>
 
-                            {application.status === "accepted" && (
+                            {application.status ===
+                                "accepted" && (
                                 <button
                                     onClick={() =>
-                                        openInterviewForm(application)
+                                        openInterviewForm(
+                                            application
+                                        )
                                     }
                                 >
                                     Schedule Interview
@@ -206,9 +247,13 @@ function CompanyDashboard() {
 
                             <button
                                 onClick={() =>
-                                    handleViewInterviews(application)
+                                    handleViewInterviews(
+                                        application
+                                    )
                                 }
-                                style={{ marginLeft: "10px" }}
+                                style={{
+                                    marginLeft: "10px"
+                                }}
                             >
                                 View Interview
                             </button>
@@ -217,6 +262,128 @@ function CompanyDashboard() {
                 </div>
             )}
 
+            {/* ==================== ASSESSMENTS ==================== */}
+
+            <h2 style={{ marginTop: "35px" }}>
+                Assessments
+            </h2>
+
+            <p>
+                Create and manage assessments for your
+                opportunities.
+            </p>
+
+            <div
+                style={{
+                    marginBottom: "20px"
+                }}
+            >
+                <a href="/assessments/create">
+                    <button>
+                        Create Assessment
+                    </button>
+                </a>
+            </div>
+
+            {assessments.length === 0 ? (
+                <div
+                    style={{
+                        background: "white",
+                        padding: "20px",
+                        marginBottom: "20px",
+                        borderRadius: "10px",
+                        boxShadow:
+                            "0 2px 8px rgba(0,0,0,.1)"
+                    }}
+                >
+                    <p>
+                        No assessments created yet.
+                    </p>
+                </div>
+            ) : (
+                <div>
+                    {assessments.map((assessment) => (
+                        <div
+                            key={assessment._id}
+                            style={{
+                                background: "white",
+                                padding: "20px",
+                                marginBottom: "15px",
+                                borderRadius: "10px",
+                                boxShadow:
+                                    "0 2px 8px rgba(0,0,0,.1)"
+                            }}
+                        >
+                            <h3>
+                                {assessment.title}
+                            </h3>
+
+                            {assessment.description && (
+                                <p>
+                                    {
+                                        assessment.description
+                                    }
+                                </p>
+                            )}
+
+                            <p>
+                                Questions:{" "}
+                                <strong>
+                                    {assessment.questions
+                                        ?.length || 0}
+                                </strong>
+                            </p>
+
+                            <p>
+                                Duration:{" "}
+                                <strong>
+                                    {assessment.duration ||
+                                        30}{" "}
+                                    minutes
+                                </strong>
+                            </p>
+
+                            {assessment.opportunityType && (
+                                <p>
+                                    Opportunity Type:{" "}
+                                    <strong>
+                                        {
+                                            assessment.opportunityType
+                                        }
+                                    </strong>
+                                </p>
+                            )}
+
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: "10px",
+                                    flexWrap: "wrap"
+                                }}
+                            >
+                                <a
+                                    href={`/assessments/${assessment._id}`}
+                                >
+                                    <button>
+                                        View Assessment
+                                    </button>
+                                </a>
+
+                                <a
+                                    href={`/assessments/${assessment._id}/submissions`}
+                                >
+                                    <button>
+                                        View Submissions
+                                    </button>
+                                </a>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* ==================== INTERVIEW FORM ==================== */}
+
             {selectedApplication && (
                 <div
                     style={{
@@ -224,7 +391,8 @@ function CompanyDashboard() {
                         background: "white",
                         padding: "25px",
                         borderRadius: "10px",
-                        boxShadow: "0 2px 8px rgba(0,0,0,.1)"
+                        boxShadow:
+                            "0 2px 8px rgba(0,0,0,.1)"
                     }}
                 >
                     <h2>
@@ -234,12 +402,23 @@ function CompanyDashboard() {
                     <p>
                         Student:{" "}
                         <strong>
-                            {selectedApplication.student?.name}
+                            {
+                                selectedApplication.student
+                                    ?.name
+                            }
                         </strong>
                     </p>
 
-                    <form onSubmit={handleScheduleInterview}>
-                        <div style={{ marginBottom: "15px" }}>
+                    <form
+                        onSubmit={
+                            handleScheduleInterview
+                        }
+                    >
+                        <div
+                            style={{
+                                marginBottom: "15px"
+                            }}
+                        >
                             <label>
                                 Date & Time
                             </label>
@@ -248,18 +427,25 @@ function CompanyDashboard() {
 
                             <input
                                 type="datetime-local"
-                                value={form.scheduledAt}
+                                value={
+                                    form.scheduledAt
+                                }
                                 onChange={(e) =>
                                     setForm({
                                         ...form,
-                                        scheduledAt: e.target.value
+                                        scheduledAt:
+                                            e.target.value
                                     })
                                 }
                                 required
                             />
                         </div>
 
-                        <div style={{ marginBottom: "15px" }}>
+                        <div
+                            style={{
+                                marginBottom: "15px"
+                            }}
+                        >
                             <label>
                                 Duration (minutes)
                             </label>
@@ -273,13 +459,18 @@ function CompanyDashboard() {
                                 onChange={(e) =>
                                     setForm({
                                         ...form,
-                                        duration: e.target.value
+                                        duration:
+                                            e.target.value
                                     })
                                 }
                             />
                         </div>
 
-                        <div style={{ marginBottom: "15px" }}>
+                        <div
+                            style={{
+                                marginBottom: "15px"
+                            }}
+                        >
                             <label>
                                 Meeting Link
                             </label>
@@ -289,17 +480,24 @@ function CompanyDashboard() {
                             <input
                                 type="text"
                                 placeholder="https://meet.google.com/..."
-                                value={form.meetingLink}
+                                value={
+                                    form.meetingLink
+                                }
                                 onChange={(e) =>
                                     setForm({
                                         ...form,
-                                        meetingLink: e.target.value
+                                        meetingLink:
+                                            e.target.value
                                     })
                                 }
                             />
                         </div>
 
-                        <div style={{ marginBottom: "15px" }}>
+                        <div
+                            style={{
+                                marginBottom: "15px"
+                            }}
+                        >
                             <label>
                                 Notes
                             </label>
@@ -313,7 +511,8 @@ function CompanyDashboard() {
                                 onChange={(e) =>
                                     setForm({
                                         ...form,
-                                        notes: e.target.value
+                                        notes:
+                                            e.target.value
                                     })
                                 }
                             />
@@ -325,8 +524,12 @@ function CompanyDashboard() {
 
                         <button
                             type="button"
-                            onClick={closeInterviewForm}
-                            style={{ marginLeft: "10px" }}
+                            onClick={
+                                closeInterviewForm
+                            }
+                            style={{
+                                marginLeft: "10px"
+                            }}
                         >
                             Cancel
                         </button>

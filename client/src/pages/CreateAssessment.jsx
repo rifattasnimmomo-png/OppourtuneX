@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { createAssessment } from "../services/assessmentService";
+import { getInternships } from "../services/internshipService";
+import { getScholarships } from "../services/scholarshipService";
 
 function CreateAssessment() {
     const navigate = useNavigate();
@@ -10,6 +13,12 @@ function CreateAssessment() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [duration, setDuration] = useState(30);
+
+    const [opportunityType, setOpportunityType] = useState("Internship");
+    const [opportunity, setOpportunity] = useState("");
+
+    const [internships, setInternships] = useState([]);
+    const [scholarships, setScholarships] = useState([]);
 
     const [questions, setQuestions] = useState([
         {
@@ -21,6 +30,44 @@ function CreateAssessment() {
 
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        loadOpportunities();
+    }, []);
+
+    const loadOpportunities = async () => {
+        try {
+            const [internshipRes, scholarshipRes] = await Promise.all([
+                getInternships(),
+                getScholarships()
+            ]);
+
+            const myInternships = (internshipRes.data || []).filter(
+                (item) => item.createdBy === user.id
+            );
+
+            const myScholarships = (scholarshipRes.data || []).filter(
+                (item) => item.createdBy === user.id
+            );
+
+            setInternships(myInternships);
+            setScholarships(myScholarships);
+
+            if (myInternships.length > 0) {
+                setOpportunity(myInternships[0]._id);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    useEffect(() => {
+        if (opportunityType === "Internship") {
+            setOpportunity(internships[0]?._id || "");
+        } else {
+            setOpportunity(scholarships[0]?._id || "");
+        }
+    }, [opportunityType, internships, scholarships]);
 
     const addQuestion = () => {
         setQuestions([
@@ -35,79 +82,55 @@ function CreateAssessment() {
 
     const removeQuestion = (index) => {
         if (questions.length === 1) {
-            setMessage("An assessment must have at least one question.");
+            setMessage("At least one question is required.");
             return;
         }
 
         setQuestions(
-            questions.filter((_, questionIndex) => questionIndex !== index)
+            questions.filter((_, i) => i !== index)
         );
     };
 
     const updateQuestion = (index, value) => {
-        const updatedQuestions = [...questions];
-
-        updatedQuestions[index].question = value;
-
-        setQuestions(updatedQuestions);
+        const updated = [...questions];
+        updated[index].question = value;
+        setQuestions(updated);
     };
 
-    const updateOption = (questionIndex, optionIndex, value) => {
-        const updatedQuestions = [...questions];
-
-        updatedQuestions[questionIndex].options[optionIndex] = value;
-
-        setQuestions(updatedQuestions);
+    const updateOption = (qIndex, oIndex, value) => {
+        const updated = [...questions];
+        updated[qIndex].options[oIndex] = value;
+        setQuestions(updated);
     };
 
-    const updateCorrectAnswer = (questionIndex, value) => {
-        const updatedQuestions = [...questions];
-
-        updatedQuestions[questionIndex].correctAnswer = Number(value);
-
-        setQuestions(updatedQuestions);
+    const updateCorrectAnswer = (index, value) => {
+        const updated = [...questions];
+        updated[index].correctAnswer = Number(value);
+        setQuestions(updated);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         setMessage("");
 
-        if (!user?.id) {
-            setMessage("Please log in again.");
-            return;
-        }
-
-        if (user.role !== "company" && user.role !== "university") {
-            setMessage(
-                "Only company and university accounts can create assessments."
-            );
-            return;
-        }
-
         if (!title.trim()) {
-            setMessage("Please enter an assessment title.");
+            setMessage("Assessment title is required.");
             return;
         }
 
-        for (let i = 0; i < questions.length; i++) {
-            const currentQuestion = questions[i];
+        if (!opportunity) {
+            setMessage("Please select an opportunity.");
+            return;
+        }
 
-            if (!currentQuestion.question.trim()) {
-                setMessage(
-                    `Please enter the question for Question ${i + 1}.`
-                );
+        for (const q of questions) {
+            if (!q.question.trim()) {
+                setMessage("Every question needs text.");
                 return;
             }
 
-            if (
-                currentQuestion.options.some(
-                    (option) => !option.trim()
-                )
-            ) {
-                setMessage(
-                    `Please fill all 4 options for Question ${i + 1}.`
-                );
+            if (q.options.some((option) => !option.trim())) {
+                setMessage("Fill all four options.");
                 return;
             }
         }
@@ -116,18 +139,17 @@ function CreateAssessment() {
             setLoading(true);
 
             await createAssessment({
-                title: title.trim(),
-                description: description.trim(),
+                title,
+                description,
                 createdBy: user.id,
-                questions,
-                duration: Number(duration) || 30
+                opportunity,
+                opportunityType,
+                duration,
+                questions
             });
 
-            setMessage("Assessment created successfully.");
-
-            setTimeout(() => {
-                navigate("/assessments");
-            }, 700);
+            alert("Assessment created successfully.");
+            navigate("/assessments");
         } catch (error) {
             console.log(error);
 
@@ -145,17 +167,13 @@ function CreateAssessment() {
 
             <h1>Create Assessment</h1>
 
-            <p>
-                Create a multiple-choice assessment for students.
-            </p>
-
             {message && (
                 <div
                     style={{
-                        padding: "12px",
-                        margin: "15px 0",
                         background: "#f3f4f6",
-                        borderRadius: "8px"
+                        padding: "12px",
+                        borderRadius: "8px",
+                        marginBottom: "20px"
                     }}
                 >
                     {message}
@@ -168,96 +186,124 @@ function CreateAssessment() {
                     style={{
                         background: "white",
                         padding: "20px",
-                        marginBottom: "20px",
                         borderRadius: "10px",
+                        marginBottom: "20px",
                         boxShadow: "0 2px 8px rgba(0,0,0,.1)"
                     }}
                 >
 
                     <h2>Assessment Details</h2>
 
-                    <div style={{ marginBottom: "15px" }}>
+                    <label>Title</label>
 
-                        <label>
-                            Assessment Title
-                        </label>
+                    <input
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        style={{
+                            width: "100%",
+                            padding: "10px",
+                            margin: "8px 0 16px"
+                        }}
+                    />
 
-                        <br />
+                    <label>Description</label>
 
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="e.g. React Developer Technical Assessment"
-                            style={{
-                                width: "100%",
-                                padding: "10px",
-                                marginTop: "5px"
-                            }}
-                        />
+                    <textarea
+                        rows="3"
+                        value={description}
+                        onChange={(e) =>
+                            setDescription(e.target.value)
+                        }
+                        style={{
+                            width: "100%",
+                            padding: "10px",
+                            margin: "8px 0 16px"
+                        }}
+                    />
 
-                    </div>
+                    <label>Opportunity Type</label>
 
-                    <div style={{ marginBottom: "15px" }}>
+                    <select
+                        value={opportunityType}
+                        onChange={(e) =>
+                            setOpportunityType(e.target.value)
+                        }
+                        style={{
+                            width: "100%",
+                            padding: "10px",
+                            margin: "8px 0 16px"
+                        }}
+                    >
 
-                        <label>
-                            Description
-                        </label>
+                        <option value="Internship">
+                            Internship
+                        </option>
 
-                        <br />
+                        <option value="Scholarship">
+                            Scholarship
+                        </option>
 
-                        <textarea
-                            rows="4"
-                            value={description}
-                            onChange={(e) =>
-                                setDescription(e.target.value)
-                            }
-                            placeholder="Describe what this assessment evaluates..."
-                            style={{
-                                width: "100%",
-                                padding: "10px",
-                                marginTop: "5px"
-                            }}
-                        />
+                    </select>
 
-                    </div>
+                    <label>Select Opportunity</label>
 
-                    <div>
+                    <select
+                        value={opportunity}
+                        onChange={(e) =>
+                            setOpportunity(e.target.value)
+                        }
+                        style={{
+                            width: "100%",
+                            padding: "10px",
+                            margin: "8px 0 16px"
+                        }}
+                    >
 
-                        <label>
-                            Duration (minutes)
-                        </label>
+                        {(opportunityType === "Internship"
+                            ? internships
+                            : scholarships
+                        ).map((item) => (
 
-                        <br />
+                            <option
+                                key={item._id}
+                                value={item._id}
+                            >
+                                {item.title}
+                            </option>
 
-                        <input
-                            type="number"
-                            min="1"
-                            value={duration}
-                            onChange={(e) =>
-                                setDuration(e.target.value)
-                            }
-                            style={{
-                                padding: "10px",
-                                marginTop: "5px"
-                            }}
-                        />
+                        ))}
 
-                    </div>
+                    </select>
+
+                    <label>Duration (minutes)</label>
+
+                    <input
+                        type="number"
+                        value={duration}
+                        onChange={(e) =>
+                            setDuration(Number(e.target.value))
+                        }
+                        style={{
+                            width: "100%",
+                            padding: "10px",
+                            margin: "8px 0"
+                        }}
+                    />
 
                 </div>
 
                 <h2>Questions</h2>
 
-                {questions.map((question, questionIndex) => (
+                {questions.map((question, qIndex) => (
 
                     <div
-                        key={questionIndex}
+                        key={qIndex}
                         style={{
                             background: "white",
                             padding: "20px",
-                            marginBottom: "20px",
                             borderRadius: "10px",
+                            marginBottom: "20px",
                             boxShadow: "0 2px 8px rgba(0,0,0,.1)"
                         }}
                     >
@@ -265,19 +311,18 @@ function CreateAssessment() {
                         <div
                             style={{
                                 display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center"
+                                justifyContent: "space-between"
                             }}
                         >
 
                             <h3>
-                                Question {questionIndex + 1}
+                                Question {qIndex + 1}
                             </h3>
 
                             <button
                                 type="button"
                                 onClick={() =>
-                                    removeQuestion(questionIndex)
+                                    removeQuestion(qIndex)
                                 }
                             >
                                 Remove
@@ -285,120 +330,74 @@ function CreateAssessment() {
 
                         </div>
 
-                        <div style={{ marginBottom: "15px" }}>
-
-                            <label>
-                                Question
-                            </label>
-
-                            <br />
-
-                            <textarea
-                                rows="3"
-                                value={question.question}
-                                onChange={(e) =>
-                                    updateQuestion(
-                                        questionIndex,
-                                        e.target.value
-                                    )
-                                }
-                                placeholder="Enter your question..."
-                                style={{
-                                    width: "100%",
-                                    padding: "10px",
-                                    marginTop: "5px"
-                                }}
-                            />
-
-                        </div>
-
-                        <h4>Options</h4>
+                        <textarea
+                            rows="2"
+                            value={question.question}
+                            onChange={(e) =>
+                                updateQuestion(
+                                    qIndex,
+                                    e.target.value
+                                )
+                            }
+                            style={{
+                                width: "100%",
+                                padding: "10px",
+                                marginBottom: "15px"
+                            }}
+                        />
 
                         {question.options.map(
-                            (option, optionIndex) => (
+                            (option, oIndex) => (
 
-                                <div
-                                    key={optionIndex}
+                                <input
+                                    key={oIndex}
+                                    type="text"
+                                    placeholder={`Option ${String.fromCharCode(
+                                        65 + oIndex
+                                    )}`}
+                                    value={option}
+                                    onChange={(e) =>
+                                        updateOption(
+                                            qIndex,
+                                            oIndex,
+                                            e.target.value
+                                        )
+                                    }
                                     style={{
+                                        width: "100%",
+                                        padding: "10px",
                                         marginBottom: "10px"
                                     }}
-                                >
-
-                                    <label>
-                                        Option{" "}
-                                        {String.fromCharCode(
-                                            65 + optionIndex
-                                        )}
-                                    </label>
-
-                                    <br />
-
-                                    <input
-                                        type="text"
-                                        value={option}
-                                        onChange={(e) =>
-                                            updateOption(
-                                                questionIndex,
-                                                optionIndex,
-                                                e.target.value
-                                            )
-                                        }
-                                        placeholder={`Option ${
-                                            optionIndex + 1
-                                        }`}
-                                        style={{
-                                            width: "100%",
-                                            padding: "10px",
-                                            marginTop: "5px"
-                                        }}
-                                    />
-
-                                </div>
+                                />
 
                             )
                         )}
 
-                        <div style={{ marginTop: "15px" }}>
+                        <label>
+                            Correct Answer
+                        </label>
 
-                            <label>
-                                Correct Answer
-                            </label>
+                        <select
+                            value={question.correctAnswer}
+                            onChange={(e) =>
+                                updateCorrectAnswer(
+                                    qIndex,
+                                    e.target.value
+                                )
+                            }
+                            style={{
+                                width: "100%",
+                                padding: "10px",
+                                marginTop: "8px"
+                            }}
+                        >
 
-                            <br />
+                            <option value={0}>Option A</option>
+                            <option value={1}>Option B</option>
+                            <option value={2}>Option C</option>
+                            <option value={3}>Option D</option>
 
-                            <select
-                                value={question.correctAnswer}
-                                onChange={(e) =>
-                                    updateCorrectAnswer(
-                                        questionIndex,
-                                        e.target.value
-                                    )
-                                }
-                                style={{
-                                    padding: "10px",
-                                    marginTop: "5px"
-                                }}
-                            >
-
-                                <option value={0}>
-                                    Option A
-                                </option>
-
-                                <option value={1}>
-                                    Option B
-                                </option>
-
-                                <option value={2}>
-                                    Option C
-                                </option>
-
-                                <option value={3}>
-                                    Option D
-                                </option>
-
-                            </select>
-
-                        </div>
+                        </select>
 
                     </div>
 
@@ -407,8 +406,7 @@ function CreateAssessment() {
                 <div
                     style={{
                         display: "flex",
-                        gap: "10px",
-                        marginBottom: "25px"
+                        gap: "10px"
                     }}
                 >
 

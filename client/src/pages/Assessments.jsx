@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getAssessmentsForCreator } from "../services/assessmentService";
+
+import {
+    getAssessmentsForCreator,
+    getAssessmentsForOpportunity,
+    getStudentResult
+} from "../services/assessmentService";
+
+import { getMyApplications } from "../services/applicationService";
 
 function Assessments() {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-    const userId = user._id || user.id;
 
     const [assessments, setAssessments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -17,32 +22,83 @@ function Assessments() {
 
     const loadAssessments = async () => {
         try {
-            if (!userId) {
-                setMessage("User ID not found. Please log in again.");
-                setLoading(false);
+            setLoading(true);
+            setMessage("");
+
+            if (!user?.id) {
+                setMessage("Please log in again.");
                 return;
             }
 
-            console.log("Loading assessments for user:", userId);
+            // COMPANY / UNIVERSITY
+            if (user.role === "company" || user.role === "university") {
+                const res = await getAssessmentsForCreator(user.id);
+                setAssessments(res.data || []);
+                return;
+            }
 
-            const response = await getAssessmentsForCreator(userId);
+            // STUDENT
+            const applicationRes = await getMyApplications(user.id);
+            const applications = applicationRes.data || [];
 
-            setAssessments(response.data || []);
-        } catch (error) {
-            console.error("Assessment loading error:", error);
+            const allAssessments = [];
 
+            for (const application of applications) {
+                if (!application.opportunity) continue;
+                if (application.status === "withdrawn") continue;
+
+                try {
+                    const res = await getAssessmentsForOpportunity(
+                        application.opportunity
+                    );
+
+                    for (const assessment of res.data || []) {
+                        let hasSubmitted = false;
+
+                        try {
+                            await getStudentResult(
+                                assessment._id,
+                                user.id
+                            );
+                            hasSubmitted = true;
+                        } catch (err) {
+                            if (err.response?.status !== 404) {
+                                console.log(err);
+                            }
+                        }
+
+                        allAssessments.push({
+                            ...assessment,
+                            applicationStatus: application.status,
+                            hasSubmitted
+                        });
+                    }
+                } catch (err) {
+                    console.log(err);
+                }
+            }
+
+            const unique = [];
+            allAssessments.forEach((assessment) => {
+                if (!unique.find((a) => a._id === assessment._id)) {
+                    unique.push(assessment);
+                }
+            });
+
+            setAssessments(unique);
+
+        } catch (err) {
+            console.log(err);
             setMessage(
-                error.response?.data?.message ||
-                "Failed to load assessments."
+                err.response?.data?.message ||
+                    "Failed to load assessments."
             );
         } finally {
             setLoading(false);
         }
     };
 
-    if (loading) {
-        return <h1>Loading Assessments...</h1>;
-    }
+    if (loading) return <h1>Assessments</h1>;
 
     return (
         <div>
@@ -58,7 +114,9 @@ function Assessments() {
                     <h1>Assessments</h1>
 
                     <p>
-                        Create and manage assessments for your opportunities.
+                        {user.role === "student"
+                            ? "Assessments available for your applications."
+                            : "Create and manage assessments for your opportunities."}
                     </p>
                 </div>
 
@@ -75,11 +133,11 @@ function Assessments() {
                     style={{
                         padding: "12px",
                         marginBottom: "20px",
-                        background: "#fee2e2",
+                        background: "#f3f4f6",
                         borderRadius: "8px"
                     }}
                 >
-                    <strong>Error:</strong> {message}
+                    {message}
                 </div>
             )}
 
@@ -89,10 +147,15 @@ function Assessments() {
                         background: "white",
                         padding: "30px",
                         borderRadius: "10px",
-                        boxShadow: "0 2px 8px rgba(0,0,0,.1)"
+                        boxShadow:
+                            "0 2px 8px rgba(0,0,0,.1)"
                     }}
                 >
-                    <p>No assessments created yet.</p>
+                    <p>
+                        {user.role === "student"
+                            ? "No assessments are currently available for your applications."
+                            : "No assessments created yet."}
+                    </p>
 
                     {(user.role === "company" ||
                         user.role === "university") && (
@@ -111,7 +174,8 @@ function Assessments() {
                                 padding: "20px",
                                 marginBottom: "15px",
                                 borderRadius: "10px",
-                                boxShadow: "0 2px 8px rgba(0,0,0,.1)"
+                                boxShadow:
+                                    "0 2px 8px rgba(0,0,0,.1)"
                             }}
                         >
                             <h2>{assessment.title}</h2>
@@ -143,6 +207,15 @@ function Assessments() {
                                 </p>
                             )}
 
+                            {user.role === "student" && (
+                                <p>
+                                    Application Status:{" "}
+                                    <strong>
+                                        {assessment.applicationStatus}
+                                    </strong>
+                                </p>
+                            )}
+
                             <div
                                 style={{
                                     display: "flex",
@@ -150,21 +223,36 @@ function Assessments() {
                                     flexWrap: "wrap"
                                 }}
                             >
-                                <Link
-                                    to={`/assessments/${assessment._id}`}
-                                >
-                                    <button>
-                                        View Assessment
-                                    </button>
-                                </Link>
+                                {user.role === "student" ? (
+                                    assessment.hasSubmitted ? (
+                                        <Link
+                                            to={`/assessments/${assessment._id}/result/${user.id}`}
+                                        >
+                                            <button>View Result</button>
+                                        </Link>
+                                    ) : (
+                                        <Link
+                                            to={`/assessments/${assessment._id}/take`}
+                                        >
+                                            <button>View Assessment</button>
+                                        </Link>
+                                    )
+                                ) : (
+                                    <>
+                                        {/* COMPANY PREVIEW PAGE */}
+                                        <Link
+                                            to={`/assessments/${assessment._id}`}
+                                        >
+                                            <button>View Assessment</button>
+                                        </Link>
 
-                                <Link
-                                    to={`/assessments/${assessment._id}/submissions`}
-                                >
-                                    <button>
-                                        View Submissions
-                                    </button>
-                                </Link>
+                                        <Link
+                                            to={`/assessments/${assessment._id}/submissions`}
+                                        >
+                                            <button>View Submissions</button>
+                                        </Link>
+                                    </>
+                                )}
                             </div>
                         </div>
                     ))}
